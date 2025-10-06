@@ -34,7 +34,10 @@ def donors_list_create(request):
         donors = Donor.objects.all()
         # Don't include password in the response
         serializer = DonorSerializer(donors, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        for donor in data:
+            donor.pop('password', None)
+        return Response(data)
     elif request.method == 'POST':
         # Handle password hashing
         password = request.data.get('password')
@@ -46,6 +49,7 @@ def donors_list_create(request):
                 donor.save()
             # Don't include password in the response
             response_data = serializer.data
+            response_data.pop('password', None)
             return Response(response_data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -54,46 +58,24 @@ def donors_list_create(request):
 @api_view(['GET', 'POST'])
 def recipients_list_create(request):
     if request.method == 'GET':
-        recipients = Recipient.objects.all()
-        # Don't include password in the response
-        serializer = RecipientSerializer(recipients, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        # Handle password hashing
-        password = request.data.get('password')
-        serializer = RecipientSerializer(data=request.data)
-        if serializer.is_valid():
-            recipient = serializer.save()
-            if password:
-                recipient.set_password(password)
-                recipient.save()
-            # Don't include password in the response
-            response_data = serializer.data
-            return Response(response_data, status=201)
-        return Response(serializer.errors, status=400)
+        items = Recipient.objects.all()
+        return Response(RecipientSerializer(items, many=True).data)
+    serializer = RecipientSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
 
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def ngos_list_create(request):
     if request.method == 'GET':
-        ngos = NGO.objects.all()
-        # Don't include password in the response
-        serializer = NGOSerializer(ngos, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        # Handle password hashing
-        password = request.data.get('password')
-        serializer = NGOSerializer(data=request.data)
-        if serializer.is_valid():
-            ngo = serializer.save()
-            if password:
-                ngo.set_password(password)
-                ngo.save()
-            # Don't include password in the response
-            response_data = serializer.data
-            return Response(response_data, status=201)
-        return Response(serializer.errors, status=400)
+        items = NGO.objects.all()
+        return Response(NGOSerializer(items, many=True).data)
+    serializer = NGOSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
 
 
 @csrf_exempt
@@ -113,29 +95,12 @@ def donor_detail(request, donor_id):
     try:
         donor = Donor.objects.get(donor_id=donor_id)
         serializer = DonorSerializer(donor)
-        return Response(serializer.data)
+        # Don't include password in the response
+        data = serializer.data
+        data.pop('password', None)
+        return Response(data)
     except Donor.DoesNotExist:
         return Response({'error': 'Donor not found'}, status=404)
-
-
-@api_view(['GET'])
-def recipient_detail(request, recipient_id):
-    try:
-        recipient = Recipient.objects.get(recipient_id=recipient_id)
-        serializer = RecipientSerializer(recipient)
-        return Response(serializer.data)
-    except Recipient.DoesNotExist:
-        return Response({'error': 'Recipient not found'}, status=404)
-
-
-@api_view(['GET'])
-def ngo_detail(request, ngo_id):
-    try:
-        ngo = NGO.objects.get(ngo_id=ngo_id)
-        serializer = NGOSerializer(ngo)
-        return Response(serializer.data)
-    except NGO.DoesNotExist:
-        return Response({'error': 'NGO not found'}, status=404)
 
 
 @csrf_exempt

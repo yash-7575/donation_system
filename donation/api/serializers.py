@@ -12,15 +12,13 @@ class DonorSerializer(serializers.ModelSerializer):
 class RecipientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipient
-        fields = ['recipient_id', 'name', 'email', 'phone', 'family_size', 'urgency', 'address', 'city', 'state', 'pincode']
-        read_only_fields = ['recipient_id']
+        fields = '__all__'
 
 
 class NGOSerializer(serializers.ModelSerializer):
     class Meta:
         model = NGO
-        fields = ['ngo_id', 'ngo_name', 'email', 'phone', 'website', 'address', 'city', 'state', 'pincode']
-        read_only_fields = ['ngo_id']
+        fields = '__all__'
 
 
 class DonationSerializer(serializers.ModelSerializer):

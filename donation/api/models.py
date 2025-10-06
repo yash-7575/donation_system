@@ -12,13 +12,6 @@ class NGO(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     pincode = models.CharField(max_length=12)
-    password = models.CharField(max_length=128, default='')  # For storing hashed passwords
-
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
 
     def __str__(self) -> str:
         return self.ngo_name
@@ -33,7 +26,7 @@ class Donor(models.Model):
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     pincode = models.CharField(max_length=12, blank=True)
-    password = models.CharField(max_length=128, default='')  # For storing hashed passwords
+    password = models.CharField(max_length=128)  # For storing hashed passwords
 
     def set_password(self, raw_password):
         self.password = make_password(raw_password)
@@ -56,13 +49,6 @@ class Recipient(models.Model):
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     pincode = models.CharField(max_length=12, blank=True)
-    password = models.CharField(max_length=128, default='')  # For storing hashed passwords
-
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
 
     def __str__(self) -> str:
         return self.name

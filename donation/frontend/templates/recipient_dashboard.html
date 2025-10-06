@@ -11,7 +11,7 @@
       <div class="flex items-center space-x-3 mt-4">
         <div class="w-10 h-10 gradient-accent rounded-full flex items-center justify-center text-white font-bold">R</div>
         <div class="flex-1 min-w-0">
-          <div class="font-semibold text-gray-900 truncate">{{ recipient.name|default:"Demo Recipient" }}</div>
+          <div class="font-semibold text-gray-900 truncate">Demo Recipient</div>
           <div class="text-xs text-gray-500 truncate">Recipient</div>
         </div>
       </div>
@@ -21,7 +21,7 @@
       <button data-tab-btn="requests" onclick="activateTab('recipient-scope','requests')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>My Requests</span></button>
       <button data-tab-btn="browse" onclick="activateTab('recipient-scope','browse')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Browse Donations</span></button>
       <button data-tab-btn="profile" onclick="activateTab('recipient-scope','profile')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Profile</span></button>
-      <a href="{% url 'logout' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
     </nav>
   </aside>
 
@@ -70,101 +70,14 @@
 
     <div data-tab-panel="profile" class="hidden animate-fade-in max-w-2xl">
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Profile</h1>
-      
-      <!-- Profile Card -->
-      <div class="profile-card bg-white rounded-xl shadow-md p-8 mb-8">
-        <div class="avatar w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-          <span>{{ recipient.name|first|upper }}</span>
-        </div>
-        <div class="profile-info">
-          <div class="main-info">
-            <div class="name-email mb-4">
-              <span class="profile-name text-xl font-bold text-gray-900">{{ recipient.name|default:"Demo Recipient" }}</span>
-              <span class="profile-email text-gray-600">{{ recipient.email|default:"recipient@example.com" }}</span>
-            </div>
-          </div>
-          <div class="profile-fields grid grid-cols-2 gap-4">
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Phone</span>
-              <span class="field-value font-bold text-gray-900">{{ recipient.phone|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Family Size</span>
-              <span class="field-value font-bold text-gray-900">{{ recipient.family_size|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Urgency</span>
-              <span class="field-value font-bold text-gray-900">{{ recipient.urgency|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Location</span>
-              <span class="field-value font-bold text-gray-900">{{ recipient.city|default:"Not provided" }}, {{ recipient.state|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Address</span>
-              <span class="field-value font-bold text-gray-900">{{ recipient.address|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Pincode</span>
-              <span class="field-value font-bold text-gray-900">{{ recipient.pincode|default:"Not provided" }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Edit Profile Form -->
       <div class="bg-white rounded-xl shadow-md p-6">
-        <form id="profile-form" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.name|default:'' }}" data-user="name">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <input type="email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.email|default:'' }}" data-user="email">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
-              <input type="tel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.phone|default:'' }}" data-user="phone">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Family Size</label>
-              <input type="number" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.family_size|default:'' }}" data-user="family_size">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Urgency</label>
-              <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" data-user="urgency">
-                <option value="low" {% if recipient.urgency == 'low' %}selected{% endif %}>Low</option>
-                <option value="medium" {% if recipient.urgency == 'medium' %}selected{% endif %}>Medium</option>
-                <option value="high" {% if recipient.urgency == 'high' %}selected{% endif %}>High</option>
-                <option value="critical" {% if recipient.urgency == 'critical' %}selected{% endif %}>Critical</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.city|default:'' }}" data-user="city">
-            </div>
-          </div>
+        <div class="flex items-center space-x-4">
+          <div class="w-20 h-20 gradient-accent rounded-full flex items-center justify-center text-white font-bold text-2xl">R</div>
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-            <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.address|default:'' }}" data-user="address">
+            <div class="text-xl font-bold text-gray-900" data-user="name">Demo Recipient</div>
+            <div class="text-gray-600" data-user="email">recipient@example.com</div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">State</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.state|default:'' }}" data-user="state">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Pincode</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ recipient.pincode|default:'' }}" data-user="pincode">
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 pt-4">
-            <button type="button" class="px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700">Cancel</button>
-            <button type="submit" class="px-6 py-3 rounded-lg gradient-accent text-white">Update Profile</button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </main>
@@ -205,3 +118,5 @@
   </div>
 </div>
 {% endblock %}
+
+

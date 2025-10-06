@@ -11,7 +11,7 @@
       <div class="flex items-center space-x-3 mt-4">
         <div class="w-10 h-10 gradient-secondary rounded-full flex items-center justify-center text-white font-bold">N</div>
         <div class="flex-1 min-w-0">
-          <div class="font-semibold text-gray-900 truncate">{{ ngo.ngo_name|default:"NGO Admin" }}</div>
+          <div class="font-semibold text-gray-900 truncate">NGO Admin</div>
           <div class="text-xs text-gray-500 truncate">NGO Admin</div>
         </div>
       </div>
@@ -21,8 +21,7 @@
       <button data-tab-btn="approvals" onclick="activateTab('ngo-scope','approvals')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Approvals</span></button>
       <button data-tab-btn="matching" onclick="activateTab('ngo-scope','matching')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Match Center</span></button>
       <button data-tab-btn="users" onclick="activateTab('ngo-scope','users')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Users</span></button>
-      <button data-tab-btn="profile" onclick="activateTab('ngo-scope','profile')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Profile</span></button>
-      <a href="{% url 'logout' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
     </nav>
   </aside>
 
@@ -77,93 +76,8 @@
         </table>
       </div>
     </div>
-
-    <div data-tab-panel="profile" class="hidden animate-fade-in max-w-2xl">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">NGO Profile</h1>
-      
-      <!-- Profile Card -->
-      <div class="profile-card bg-white rounded-xl shadow-md p-8 mb-8">
-        <div class="avatar w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold">
-          <span>{{ ngo.ngo_name|first|upper }}</span>
-        </div>
-        <div class="profile-info">
-          <div class="main-info">
-            <div class="name-email mb-4">
-              <span class="profile-name text-xl font-bold text-gray-900">{{ ngo.ngo_name|default:"NGO Name" }}</span>
-              <span class="profile-email text-gray-600">{{ ngo.email|default:"ngo@example.com" }}</span>
-            </div>
-          </div>
-          <div class="profile-fields grid grid-cols-2 gap-4">
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Phone</span>
-              <span class="field-value font-bold text-gray-900">{{ ngo.phone|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Website</span>
-              <span class="field-value font-bold text-gray-900">{{ ngo.website|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Location</span>
-              <span class="field-value font-bold text-gray-900">{{ ngo.city|default:"Not provided" }}, {{ ngo.state|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Address</span>
-              <span class="field-value font-bold text-gray-900">{{ ngo.address|default:"Not provided" }}</span>
-            </div>
-            <div>
-              <span class="field-label block text-gray-500 text-sm">Pincode</span>
-              <span class="field-value font-bold text-gray-900">{{ ngo.pincode|default:"Not provided" }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Edit Profile Form -->
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <form id="profile-form" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">NGO Name</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.ngo_name|default:'' }}" data-user="ngo_name">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <input type="email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.email|default:'' }}" data-user="email">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
-              <input type="tel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.phone|default:'' }}" data-user="phone">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Website</label>
-              <input type="url" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.website|default:'' }}" data-user="website">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.city|default:'' }}" data-user="city">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">State</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.state|default:'' }}" data-user="state">
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-            <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.address|default:'' }}" data-user="address">
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Pincode</label>
-              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.pincode|default:'' }}" data-user="pincode">
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 pt-4">
-            <button type="button" class="px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700">Cancel</button>
-            <button type="submit" class="px-6 py-3 rounded-lg gradient-secondary text-white">Update Profile</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </main>
 </div>
 {% endblock %}
+
+
