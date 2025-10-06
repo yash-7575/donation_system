@@ -32,35 +32,68 @@ def superadmin_demo(request):
 def donors_list_create(request):
     if request.method == 'GET':
         donors = Donor.objects.all()
-        return Response(DonorSerializer(donors, many=True).data)
-    serializer = DonorSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data)
+        # Don't include password in the response
+        serializer = DonorSerializer(donors, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        # Handle password hashing
+        password = request.data.get('password')
+        serializer = DonorSerializer(data=request.data)
+        if serializer.is_valid():
+            donor = serializer.save()
+            if password:
+                donor.set_password(password)
+                donor.save()
+            # Don't include password in the response
+            response_data = serializer.data
+            return Response(response_data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def recipients_list_create(request):
     if request.method == 'GET':
-        items = Recipient.objects.all()
-        return Response(RecipientSerializer(items, many=True).data)
-    serializer = RecipientSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data)
+        recipients = Recipient.objects.all()
+        # Don't include password in the response
+        serializer = RecipientSerializer(recipients, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        # Handle password hashing
+        password = request.data.get('password')
+        serializer = RecipientSerializer(data=request.data)
+        if serializer.is_valid():
+            recipient = serializer.save()
+            if password:
+                recipient.set_password(password)
+                recipient.save()
+            # Don't include password in the response
+            response_data = serializer.data
+            return Response(response_data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def ngos_list_create(request):
     if request.method == 'GET':
-        items = NGO.objects.all()
-        return Response(NGOSerializer(items, many=True).data)
-    serializer = NGOSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data)
+        ngos = NGO.objects.all()
+        # Don't include password in the response
+        serializer = NGOSerializer(ngos, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        # Handle password hashing
+        password = request.data.get('password')
+        serializer = NGOSerializer(data=request.data)
+        if serializer.is_valid():
+            ngo = serializer.save()
+            if password:
+                ngo.set_password(password)
+                ngo.save()
+            # Don't include password in the response
+            response_data = serializer.data
+            return Response(response_data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 @csrf_exempt
@@ -73,6 +106,36 @@ def donations_list_create(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def donor_detail(request, donor_id):
+    try:
+        donor = Donor.objects.get(donor_id=donor_id)
+        serializer = DonorSerializer(donor)
+        return Response(serializer.data)
+    except Donor.DoesNotExist:
+        return Response({'error': 'Donor not found'}, status=404)
+
+
+@api_view(['GET'])
+def recipient_detail(request, recipient_id):
+    try:
+        recipient = Recipient.objects.get(recipient_id=recipient_id)
+        serializer = RecipientSerializer(recipient)
+        return Response(serializer.data)
+    except Recipient.DoesNotExist:
+        return Response({'error': 'Recipient not found'}, status=404)
+
+
+@api_view(['GET'])
+def ngo_detail(request, ngo_id):
+    try:
+        ngo = NGO.objects.get(ngo_id=ngo_id)
+        serializer = NGOSerializer(ngo)
+        return Response(serializer.data)
+    except NGO.DoesNotExist:
+        return Response({'error': 'NGO not found'}, status=404)
 
 
 @csrf_exempt
@@ -91,5 +154,3 @@ def match_donation(request):
         donation.save()
         return Response({'matched': True, 'ngo_id': ngo.ngo_id})
     return Response({'matched': False})
-
-
