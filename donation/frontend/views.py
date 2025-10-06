@@ -4,6 +4,9 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from django.utils.decorators import method_decorator
+from django.contrib.auth import authenticate, login
+from django.db import connection, transaction, IntegrityError
+from .forms import DonationForm
 import json
 import requests
 import logging
@@ -11,71 +14,215 @@ import logging
 # Set up logging
 logger = logging.getLogger(__name__)
 
+
+def run_select(sql, params=None):
+    """Helper function to execute SELECT queries and return results"""
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params or {})
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+        return {
+            'columns': columns,
+            'rows': [dict(zip(columns, row)) for row in rows]
+        }
+
 def home(request):
     return render(request, 'home.html')
 
 
 def login_page(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        role = request.POST.get('role', 'donor')
+        
+        try:
+            if role == 'donor':
+                # Authenticate donor
+                from api.models import Donor
+                try:
+                    donor = Donor.objects.get(email=email)
+                    if donor.check_password(password):
+                        # Store donor ID in session
+                        request.session['user_id'] = donor.donor_id
+                        request.session['user_type'] = 'donor'
+                        return redirect('donor')
+                    else:
+                        return render(request, 'login.html', {'error': 'Invalid email or password'})
+                except Donor.DoesNotExist:
+                    return render(request, 'login.html', {'error': 'Invalid email or password'})
+            
+            elif role == 'recipient':
+                # Authenticate recipient
+                from api.models import Recipient
+                try:
+                    recipient = Recipient.objects.get(email=email)
+                    if recipient.check_password(password):
+                        # Store recipient ID in session
+                        request.session['user_id'] = recipient.recipient_id
+                        request.session['user_type'] = 'recipient'
+                        return redirect('recipient')
+                    else:
+                        return render(request, 'login.html', {'error': 'Invalid email or password'})
+                except Recipient.DoesNotExist:
+                    return render(request, 'login.html', {'error': 'Invalid email or password'})
+            
+            elif role == 'ngo_admin':
+                # Authenticate NGO
+                from api.models import NGO
+                try:
+                    ngo = NGO.objects.get(email=email)
+                    if ngo.check_password(password):
+                        # Store NGO ID in session
+                        request.session['user_id'] = ngo.ngo_id
+                        request.session['user_type'] = 'ngo'
+                        return redirect('ngo')
+                    else:
+                        return render(request, 'login.html', {'error': 'Invalid email or password'})
+                except NGO.DoesNotExist:
+                    return render(request, 'login.html', {'error': 'Invalid email or password'})
+            
+            else:
+                return render(request, 'login.html', {'error': 'Invalid user role'})
+                
+        except Exception as e:
+            logger.error(f"Exception in user login: {str(e)}")
+            return render(request, 'login.html', {'error': f"Login failed: {str(e)}"})
+    
     return render(request, 'login.html')
+
+
+def logout_page(request):
+    # Clear the session
+    if 'user_id' in request.session:
+        del request.session['user_id']
+    if 'user_type' in request.session:
+        del request.session['user_type']
+    return redirect('home')
 
 
 @csrf_protect
 def register_page(request):
     if request.method == 'POST':
-        # Handle donor registration
+        role = request.POST.get('role', 'donor')
+        
         try:
-            # Prepare data for API call
-            donor_data = {
-                'name': request.POST.get('name'),
-                'email': request.POST.get('email'),
-                'phone': request.POST.get('phone', ''),
-                'address': request.POST.get('address', ''),
-                'city': request.POST.get('city', ''),
-                'state': request.POST.get('state', ''),
-                'pincode': request.POST.get('pincode', '')
-            }
+            if role == 'donor':
+                # Handle donor registration
+                donor_data = {
+                    'name': request.POST.get('name'),
+                    'email': request.POST.get('email'),
+                    'phone': request.POST.get('phone', ''),
+                    'address': request.POST.get('address', ''),
+                    'city': request.POST.get('city', ''),
+                    'state': request.POST.get('state', ''),
+                    'pincode': request.POST.get('pincode', ''),
+                    'password': request.POST.get('password', '')
+                }
+                
+                logger.info(f"Attempting to create donor with data: {donor_data}")
+                
+                # Make API call to create donor
+                api_url = "http://127.0.0.1:8000/api/donors/"
+                response = requests.post(api_url, json=donor_data)
+                
+                logger.info(f"API response status: {response.status_code}")
+                logger.info(f"API response text: {response.text}")
+                
+                if response.status_code == 200 or response.status_code == 201:
+                    logger.info("Donor created successfully, redirecting to login")
+                    return redirect('login')
+                else:
+                    error_msg = response.text
+                    logger.error(f"API Error: {error_msg}")
+                    return render(request, 'register.html', {'error': f"API Error: {error_msg}"})
             
-            logger.info(f"Attempting to create donor with data: {donor_data}")
+            elif role == 'recipient':
+                # Handle recipient registration
+                recipient_data = {
+                    'name': request.POST.get('name'),
+                    'email': request.POST.get('email'),
+                    'phone': request.POST.get('phone', ''),
+                    'family_size': request.POST.get('family_size', 1),
+                    'urgency': request.POST.get('urgency', 'medium'),
+                    'address': request.POST.get('address', ''),
+                    'city': request.POST.get('city', ''),
+                    'state': request.POST.get('state', ''),
+                    'pincode': request.POST.get('pincode', ''),
+                    'password': request.POST.get('password', '')
+                }
+                
+                logger.info(f"Attempting to create recipient with data: {recipient_data}")
+                
+                # Make API call to create recipient
+                api_url = "http://127.0.0.1:8000/api/recipients/"
+                response = requests.post(api_url, json=recipient_data)
+                
+                logger.info(f"API response status: {response.status_code}")
+                logger.info(f"API response text: {response.text}")
+                
+                if response.status_code == 200 or response.status_code == 201:
+                    logger.info("Recipient created successfully, redirecting to login")
+                    return redirect('login')
+                else:
+                    error_msg = response.text
+                    logger.error(f"API Error: {error_msg}")
+                    return render(request, 'register.html', {'error': f"API Error: {error_msg}"})
             
-            # Make API call to create donor
-            # Use direct localhost URL instead of constructing from request
-            api_url = "http://127.0.0.1:8000/api/donors/"
-            response = requests.post(api_url, json=donor_data)
+            elif role == 'ngo_admin':
+                # Handle NGO registration
+                ngo_data = {
+                    'ngo_name': request.POST.get('ngo_name'),
+                    'email': request.POST.get('email'),
+                    'phone': request.POST.get('phone', ''),
+                    'website': request.POST.get('website', ''),
+                    'address': request.POST.get('address', ''),
+                    'city': request.POST.get('city', ''),
+                    'state': request.POST.get('state', ''),
+                    'pincode': request.POST.get('pincode', ''),
+                    'password': request.POST.get('password', '')
+                }
+                
+                logger.info(f"Attempting to create NGO with data: {ngo_data}")
+                
+                # Make API call to create NGO
+                api_url = "http://127.0.0.1:8000/api/ngos/"
+                response = requests.post(api_url, json=ngo_data)
+                
+                logger.info(f"API response status: {response.status_code}")
+                logger.info(f"API response text: {response.text}")
+                
+                if response.status_code == 200 or response.status_code == 201:
+                    logger.info("NGO created successfully, redirecting to login")
+                    return redirect('login')
+                else:
+                    error_msg = response.text
+                    logger.error(f"API Error: {error_msg}")
+                    return render(request, 'register.html', {'error': f"API Error: {error_msg}"})
             
-            logger.info(f"API response status: {response.status_code}")
-            logger.info(f"API response text: {response.text}")
-            
-            if response.status_code == 200 or response.status_code == 201:
-                # Successfully created donor, redirect to donor dashboard
-                logger.info("Donor created successfully, redirecting to dashboard")
-                return redirect('donor')
             else:
-                # Handle error
-                error_msg = response.text
-                logger.error(f"API Error: {error_msg}")
-                return render(request, 'register.html', {'error': f"API Error: {error_msg}"})
+                return render(request, 'register.html', {'error': 'Invalid user role'})
+                
         except Exception as e:
-            logger.error(f"Exception in donor registration: {str(e)}")
+            logger.error(f"Exception in user registration: {str(e)}")
             return render(request, 'register.html', {'error': f"Exception: {str(e)}"})
     
     return render(request, 'register.html')
 
 
 def donor_dashboard(request):
+    # Check if user is logged in and is a donor
+    user_id = request.session.get('user_id')
+    user_type = request.session.get('user_type')
+    
+    if not user_id or user_type != 'donor':
+        return redirect('login')
+    
     if request.method == 'POST':
         # Handle donation submission
         try:
-            # For now, we'll use the first donor in the database
-            # In a real implementation, you would get the actual donor ID from the session
-            from api.models import Donor
-            donor = Donor.objects.first()
-            
-            if not donor:
-                logger.error("No donors found in database")
-                return JsonResponse({'success': False, 'error': 'No donors found. Please register first.'})
-            
             donation_data = {
-                'donor': donor.donor_id,  # Use the actual donor ID
+                'donor': user_id,
                 'title': request.POST.get('title'),
                 'description': request.POST.get('description', ''),
                 'category': request.POST.get('category'),
@@ -93,12 +240,9 @@ def donor_dashboard(request):
             logger.info(f"API response text: {response.text}")
             
             if response.status_code == 200 or response.status_code == 201:
-                # Successfully created donation
                 logger.info("Donation created successfully")
-                # Return success response
                 return JsonResponse({'success': True})
             else:
-                # Handle error
                 error_msg = response.text
                 logger.error(f"API Error: {error_msg}")
                 return JsonResponse({'success': False, 'error': f"API Error: {error_msg}"})
@@ -106,15 +250,50 @@ def donor_dashboard(request):
             logger.error(f"Exception in donation submission: {str(e)}")
             return JsonResponse({'success': False, 'error': f"Exception: {str(e)}"})
     
-    # GET request - display donor dashboard with donor information
+    # GET request - display donor dashboard with donor information and KPIs
     try:
-        # For now, we'll use the first donor in the database
-        # In a real implementation, you would get the actual donor ID from the session
-        from api.models import Donor
-        donor = Donor.objects.first()
+        # Calculate KPIs using SQL
+        donor_id = user_id
         
-        if donor:
-            # Pass donor information to the template
+        kpi_sql = """
+        SELECT 
+            COUNT(*) AS total_donations,
+            COALESCE(SUM(quantity), 0) AS total_items,
+            SUM(CASE WHEN status='delivered' THEN 1 ELSE 0 END) AS delivered_count,
+            SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) AS pending_count,
+            (SELECT AVG(f.rating)
+             FROM api_feedback f
+             JOIN api_donation d2 ON d2.donation_id = f.match_id
+             WHERE d2.donor_id = %(donor_id)s) AS avg_rating
+        FROM api_donation
+        WHERE donor_id = %(donor_id)s
+        """
+        
+        kpis_result = run_select(kpi_sql, {'donor_id': donor_id})
+        kpis = kpis_result['rows'][0] if kpis_result['rows'] else {
+            'total_donations': 0,
+            'total_items': 0,
+            'delivered_count': 0,
+            'pending_count': 0,
+            'avg_rating': None
+        }
+        
+        # Fetch donor details from API
+        api_url = f"http://127.0.0.1:8000/api/donors/{user_id}/"
+        response = requests.get(api_url)
+        
+        if response.status_code == 200:
+            donor_data = response.json()
+            context = {
+                'donor': donor_data,
+                'kpis': kpis,
+                'kpi_sql': kpi_sql,
+                'kpi_params': {'donor_id': donor_id}
+            }
+        else:
+            # Fallback to database if API fails
+            from api.models import Donor
+            donor = Donor.objects.get(donor_id=user_id)
             context = {
                 'donor': {
                     'donor_id': donor.donor_id,
@@ -125,23 +304,223 @@ def donor_dashboard(request):
                     'city': donor.city,
                     'state': donor.state,
                     'pincode': donor.pincode
-                }
+                },
+                'kpis': kpis,
+                'kpi_sql': kpi_sql,
+                'kpi_params': {'donor_id': donor_id}
             }
-        else:
-            context = {}
     except Exception as e:
-        logger.error(f"Error fetching donor information: {str(e)}")
-        context = {}
+        logger.error(f"Error fetching donor information or KPIs: {str(e)}")
+        context = {
+            'kpis': {
+                'total_donations': 0,
+                'total_items': 0,
+                'delivered_count': 0,
+                'pending_count': 0,
+                'avg_rating': None
+            }
+        }
     
-    # In a real implementation, you would check if the user is authenticated
-    # For now, we'll just show the dashboard
     return render(request, 'donor_dashboard.html', context)
 
 
 def recipient_dashboard(request):
-    # Placeholder: replicate donor layout for now
-    return render(request, 'recipient_dashboard.html')
+    # Check if user is logged in and is a recipient
+    user_id = request.session.get('user_id')
+    user_type = request.session.get('user_type')
+    
+    if not user_id or user_type != 'recipient':
+        return redirect('login')
+    
+    # GET request - display recipient dashboard with recipient information
+    try:
+        # Fetch recipient details from API
+        api_url = f"http://127.0.0.1:8000/api/recipients/{user_id}/"
+        response = requests.get(api_url)
+        
+        if response.status_code == 200:
+            recipient_data = response.json()
+            context = {'recipient': recipient_data}
+        else:
+            # Fallback to database if API fails
+            from api.models import Recipient
+            recipient = Recipient.objects.get(recipient_id=user_id)
+            context = {
+                'recipient': {
+                    'recipient_id': recipient.recipient_id,
+                    'name': recipient.name,
+                    'email': recipient.email,
+                    'phone': recipient.phone,
+                    'family_size': recipient.family_size,
+                    'urgency': recipient.urgency,
+                    'address': recipient.address,
+                    'city': recipient.city,
+                    'state': recipient.state,
+                    'pincode': recipient.pincode
+                }
+            }
+    except Exception as e:
+        logger.error(f"Error fetching recipient information: {str(e)}")
+        context = {}
+    
+    return render(request, 'recipient_dashboard.html', context)
 
 
 def ngo_dashboard(request):
-    return render(request, 'ngo_dashboard.html')
+    # Check if user is logged in and is an NGO
+    user_id = request.session.get('user_id')
+    user_type = request.session.get('user_type')
+    
+    if not user_id or user_type != 'ngo':
+        return redirect('login')
+    
+    # GET request - display NGO dashboard with NGO information
+    try:
+        # Fetch NGO details from API
+        api_url = f"http://127.0.0.1:8000/api/ngos/{user_id}/"
+        response = requests.get(api_url)
+        
+        if response.status_code == 200:
+            ngo_data = response.json()
+            context = {'ngo': ngo_data}
+        else:
+            # Fallback to database if API fails
+            from api.models import NGO
+            ngo = NGO.objects.get(ngo_id=user_id)
+            context = {
+                'ngo': {
+                    'ngo_id': ngo.ngo_id,
+                    'ngo_name': ngo.ngo_name,
+                    'email': ngo.email,
+                    'phone': ngo.phone,
+                    'website': ngo.website,
+                    'address': ngo.address,
+                    'city': ngo.city,
+                    'state': ngo.state,
+                    'pincode': ngo.pincode
+                }
+            }
+    except Exception as e:
+        logger.error(f"Error fetching NGO information: {str(e)}")
+        context = {}
+    
+    return render(request, 'ngo_dashboard.html', context)
+
+
+def create_donation(request):
+    # Check if user is logged in and is a donor
+    user_id = request.session.get('user_id')
+    user_type = request.session.get('user_type')
+    
+    if not user_id or user_type != 'donor':
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = DonationForm(request.POST)
+        if form.is_valid():
+            # Get donor information for city-based NGO assignment
+            try:
+                from api.models import Donor, NGO
+                donor = Donor.objects.get(donor_id=user_id)
+                donor_city = donor.city
+                
+                # Option 1: Using Django ORM with transaction
+                try:
+                    with transaction.atomic():
+                        # Auto-assign NGO by city
+                        ngo = NGO.objects.filter(city=donor_city).first()
+                        
+                        donation = form.save(commit=False)
+                        donation.donor_id = user_id
+                        donation.ngo = ngo
+                        donation.status = 'pending'
+                        donation.save()
+                        
+                    return render(request, 'create_donation.html', {
+                        'form': DonationForm(),  # Reset form
+                        'success': 'Donation submitted successfully!',
+                        'insert_sql': get_insert_sql(),
+                        'stored_procedure': get_stored_procedure(),
+                        'concept': 'INSERT with Foreign Keys, Auto-assignment by city, Transaction'
+                    })
+                    
+                except IntegrityError as e:
+                    form.add_error(None, f"Error saving donation: {e}")
+                
+                # Option 2: Using Stored Procedure (for DBMS demo)
+                # Uncomment below and comment Option 1 for stored procedure demonstration
+                """
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.callproc('SubmitDonation', [
+                            user_id,
+                            form.cleaned_data['title'],
+                            form.cleaned_data['description'],
+                            form.cleaned_data['category'],
+                            form.cleaned_data['quantity'],
+                            donor_city,
+                            form.cleaned_data['image_url']
+                        ])
+                    return render(request, 'create_donation.html', {
+                        'form': DonationForm(),  # Reset form
+                        'success': 'Donation submitted successfully using stored procedure!',
+                        'insert_sql': get_insert_sql(),
+                        'stored_procedure': get_stored_procedure(),
+                        'concept': 'Stored Procedure, Auto-assignment by city, Transaction'
+                    })
+                except Exception as e:
+                    form.add_error(None, f"Stored procedure error: {e}")
+                """
+                    
+            except Exception as e:
+                form.add_error(None, f"Error: {e}")
+    else:
+        form = DonationForm()
+    
+    return render(request, 'create_donation.html', {
+        'form': form,
+        'insert_sql': get_insert_sql(),
+        'stored_procedure': get_stored_procedure(),
+        'concept': 'INSERT with Foreign Keys, Auto-assignment by city, Transaction'
+    })
+
+
+def get_insert_sql():
+    """Return the SQL query for demonstration purposes"""
+    return """
+INSERT INTO api_donation 
+(donor_id, ngo_id, title, description, category, quantity, status, image_url, created_at)
+VALUES 
+(%(donor_id)s, %(ngo_id)s, %(title)s, %(description)s, %(category)s, %(quantity)s, 'pending', %(image_url)s, NOW())
+"""
+
+
+def get_stored_procedure():
+    """Return the MySQL stored procedure for demonstration purposes"""
+    return """
+CREATE PROCEDURE SubmitDonation(
+    IN p_donor_id INT,
+    IN p_title VARCHAR(255),
+    IN p_description TEXT,
+    IN p_category VARCHAR(50),
+    IN p_quantity INT,
+    IN p_city VARCHAR(100),
+    IN p_image_url VARCHAR(255)
+)
+BEGIN
+    DECLARE v_ngo_id INT;
+    
+    START TRANSACTION;
+        -- Auto-assign NGO based on donor's city
+        SELECT ngo_id INTO v_ngo_id
+        FROM api_ngo
+        WHERE city = p_city
+        ORDER BY ngo_id
+        LIMIT 1;
+        
+        -- Insert donation
+        INSERT INTO api_donation (donor_id, ngo_id, title, description, category, quantity, status, image_url, created_at)
+        VALUES (p_donor_id, v_ngo_id, p_title, p_description, p_category, p_quantity, 'pending', p_image_url, NOW());
+    COMMIT;
+END
+"""
