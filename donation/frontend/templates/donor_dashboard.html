@@ -66,7 +66,10 @@
       <div class="bg-white rounded-xl shadow-md p-8 gradient-hero text-white mb-8">
         <h2 class="text-2xl font-bold mb-2">Ready to make a difference?</h2>
         <p class="opacity-90 mb-4">Share items you no longer need with families who need them</p>
-        <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 bg-white text-purple-600">Donate New Item</a>
+        <div class="flex gap-4">
+          <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 bg-white text-purple-600">Quick Donate</a>
+          <a href="{% url 'create_donation' %}" class="btn-ripple rounded-lg font-semibold px-6 py-3 bg-white/20 text-white border border-white/30">Advanced Form</a>
+        </div>
       </div>
       
       <!-- KPI Details Section -->
@@ -134,7 +137,10 @@
           <h1 class="text-3xl font-bold text-gray-900 mb-2">My Donations</h1>
           <p class="text-gray-600">Manage and track all your donations</p>
         </div>
-        <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 gradient-primary text-white">New Donation</a>
+        <div class="flex gap-3">
+          <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 gradient-primary text-white">Quick Donation</a>
+          <a href="{% url 'create_donation' %}" class="btn-ripple rounded-lg font-semibold px-6 py-3 bg-gray-500 text-white">Advanced Form</a>
+        </div>
       </div>
       <div class="grid gap-6" id="donations-list">
         <!-- Donations will be dynamically loaded here -->

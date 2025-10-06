@@ -12,4 +12,5 @@ urlpatterns = [
     path('donor/', frontend_views.donor_dashboard, name='donor'),
     path('recipient/', frontend_views.recipient_dashboard, name='recipient'),
     path('ngo/', frontend_views.ngo_dashboard, name='ngo'),
+    path('donors/donate/', frontend_views.create_donation, name='create_donation'),
 ]

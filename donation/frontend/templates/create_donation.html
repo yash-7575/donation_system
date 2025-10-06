@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Donation</title>
+    <style>
+        .concept-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .sql-box {
+            background: #f4f4f4;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+            border-radius: 8px;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 12px;
+            overflow-x: auto;
+            border-radius: 4px;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            margin: 10px 0;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        .navigation {
+            margin-bottom: 20px;
+        }
+        .navigation a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="navigation">
+        <a href="{% url 'donor' %}">&larr; Back to Dashboard</a>
+    </div>
+
+    <h2>
+        Create New Donation 
+        <span class="concept-badge">{{ concept }}</span>
+    </h2>
+
+    <div class="form-container">
+        <form method="post">
+            {% csrf_token %}
+            
+            <label>Title:</label>
+            {{ form.title }}
+            
+            <label>Description:</label>
+            {{ form.description }}
+            
+            <label>Category:</label>
+            {{ form.category }}
+            
+            <label>Quantity:</label>
+            {{ form.quantity }}
+            
+            <label>Image URL (optional):</label>
+            {{ form.image_url }}
+            
+            {% if form.errors %}
+            <div class="error">
+                {{ form.errors }}
+            </div>
+            {% endif %}
+            
+            {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="success">
+                {{ success }}
+            </div>
+            {% endif %}
+            
+            <button type="submit">Submit Donation</button>
+            <button type="button" onclick="toggleSQL()">🔍 Show SQL</button>
+        </form>
+    </div>
+
+    <div id="sql-box" class="sql-box">
+        <h4>DBMS Concepts Demonstrated:</h4>
+        <ul>
+            <li><strong>INSERT:</strong> Adding new record to donations table</li>
+            <li><strong>Foreign Keys:</strong> Links to donors and ngos tables</li>
+            <li><strong>Transaction:</strong> Ensures atomic operation</li>
+            <li><strong>Auto-assignment:</strong> NGO selected based on city</li>
+            <li><strong>Constraints:</strong> Validates data before insertion</li>
+        </ul>
+        
+        <h4>SQL Query:</h4>
+        <pre>{{ insert_sql }}</pre>
+        
+        {% if stored_procedure %}
+        <h4>Stored Procedure (MySQL):</h4>
+        <pre>{{ stored_procedure }}</pre>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleSQL() {
+    var box = document.getElementById('sql-box');
+    box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+}
+</script>
+
+</body>
+</html>
