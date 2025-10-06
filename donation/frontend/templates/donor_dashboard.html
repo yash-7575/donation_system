@@ -29,7 +29,7 @@
       <button data-tab-btn="profile" onclick="activateTab('donor-scope','profile')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
         <span>Profile</span>
       </button>
-      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+      <a href="{% url 'logout' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
     </nav>
   </aside>
 
@@ -93,14 +93,42 @@
 
     <div data-tab-panel="profile" class="hidden animate-fade-in max-w-2xl">
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Profile Settings</h1>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="flex items-center space-x-4 mb-6">
-          <div class="w-20 h-20 gradient-primary rounded-full flex items-center justify-center text-white font-bold text-2xl">D</div>
-          <div>
-            <div class="text-xl font-bold text-gray-900">{{ donor.name|default:"Demo Donor" }}</div>
-            <div class="text-gray-600">{{ donor.email|default:"donor@example.com" }}</div>
+      
+      <!-- Profile Card -->
+      <div class="profile-card bg-white rounded-xl shadow-md p-8 mb-8">
+        <div class="avatar w-16 h-16 rounded-full bg-gradient-to-r from-orange-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+          <span>{{ donor.name|first|upper }}</span>
+        </div>
+        <div class="profile-info">
+          <div class="main-info">
+            <div class="name-email mb-4">
+              <span class="profile-name text-xl font-bold text-gray-900">{{ donor.name|default:"Demo Donor" }}</span>
+              <span class="profile-email text-gray-600">{{ donor.email|default:"donor@example.com" }}</span>
+            </div>
+          </div>
+          <div class="profile-fields grid grid-cols-2 gap-4">
+            <div>
+              <span class="field-label block text-gray-500 text-sm">Phone</span>
+              <span class="field-value font-bold text-gray-900">{{ donor.phone|default:"Not provided" }}</span>
+            </div>
+            <div>
+              <span class="field-label block text-gray-500 text-sm">Location</span>
+              <span class="field-value font-bold text-gray-900">{{ donor.city|default:"Not provided" }}, {{ donor.state|default:"Not provided" }}</span>
+            </div>
+            <div>
+              <span class="field-label block text-gray-500 text-sm">Address</span>
+              <span class="field-value font-bold text-gray-900">{{ donor.address|default:"Not provided" }}</span>
+            </div>
+            <div>
+              <span class="field-label block text-gray-500 text-sm">Pincode</span>
+              <span class="field-value font-bold text-gray-900">{{ donor.pincode|default:"Not provided" }}</span>
+            </div>
           </div>
         </div>
+      </div>
+      
+      <!-- Edit Profile Form -->
+      <div class="bg-white rounded-xl shadow-md p-6">
         <form id="profile-form" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -134,7 +162,10 @@
               <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.pincode|default:'' }}" data-user="pincode">
             </div>
           </div>
-          <button type="submit" class="px-6 py-3 rounded-lg gradient-primary text-white">Update Profile</button>
+          <div class="flex justify-end gap-3 pt-4">
+            <button type="button" class="px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700">Cancel</button>
+            <button type="submit" class="px-6 py-3 rounded-lg gradient-primary text-white">Update Profile</button>
+          </div>
         </form>
       </div>
     </div>
