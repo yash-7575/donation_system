@@ -5,12 +5,25 @@ from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth import authenticate, login
+from django.db import connection
 import json
 import requests
 import logging
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+
+def run_select(sql, params=None):
+    """Helper function to execute SELECT queries and return results"""
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params or {})
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+        return {
+            'columns': columns,
+            'rows': [dict(zip(columns, row)) for row in rows]
+        }
 
 def home(request):
     return render(request, 'home.html')
@@ -236,15 +249,46 @@ def donor_dashboard(request):
             logger.error(f"Exception in donation submission: {str(e)}")
             return JsonResponse({'success': False, 'error': f"Exception: {str(e)}"})
     
-    # GET request - display donor dashboard with donor information
+    # GET request - display donor dashboard with donor information and KPIs
     try:
+        # Calculate KPIs using SQL
+        donor_id = user_id
+        
+        kpi_sql = """
+        SELECT 
+            COUNT(*) AS total_donations,
+            COALESCE(SUM(quantity), 0) AS total_items,
+            SUM(CASE WHEN status='delivered' THEN 1 ELSE 0 END) AS delivered_count,
+            SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) AS pending_count,
+            (SELECT AVG(f.rating)
+             FROM api_feedback f
+             JOIN api_donation d2 ON d2.donation_id = f.match_id
+             WHERE d2.donor_id = %(donor_id)s) AS avg_rating
+        FROM api_donation
+        WHERE donor_id = %(donor_id)s
+        """
+        
+        kpis_result = run_select(kpi_sql, {'donor_id': donor_id})
+        kpis = kpis_result['rows'][0] if kpis_result['rows'] else {
+            'total_donations': 0,
+            'total_items': 0,
+            'delivered_count': 0,
+            'pending_count': 0,
+            'avg_rating': None
+        }
+        
         # Fetch donor details from API
         api_url = f"http://127.0.0.1:8000/api/donors/{user_id}/"
         response = requests.get(api_url)
         
         if response.status_code == 200:
             donor_data = response.json()
-            context = {'donor': donor_data}
+            context = {
+                'donor': donor_data,
+                'kpis': kpis,
+                'kpi_sql': kpi_sql,
+                'kpi_params': {'donor_id': donor_id}
+            }
         else:
             # Fallback to database if API fails
             from api.models import Donor
@@ -259,11 +303,22 @@ def donor_dashboard(request):
                     'city': donor.city,
                     'state': donor.state,
                     'pincode': donor.pincode
-                }
+                },
+                'kpis': kpis,
+                'kpi_sql': kpi_sql,
+                'kpi_params': {'donor_id': donor_id}
             }
     except Exception as e:
-        logger.error(f"Error fetching donor information: {str(e)}")
-        context = {}
+        logger.error(f"Error fetching donor information or KPIs: {str(e)}")
+        context = {
+            'kpis': {
+                'total_donations': 0,
+                'total_items': 0,
+                'delivered_count': 0,
+                'pending_count': 0,
+                'avg_rating': None
+            }
+        }
     
     return render(request, 'donor_dashboard.html', context)
 

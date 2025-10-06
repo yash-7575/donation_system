@@ -41,26 +41,90 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="total-donations">0</div>
+          <div class="text-3xl font-bold text-gray-900" id="total-donations">{{ kpis.total_donations|default:0 }}</div>
           <div class="text-sm text-gray-600">Total Donations</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="delivered-donations">0</div>
+          <div class="text-3xl font-bold text-gray-900" id="delivered-donations">{{ kpis.delivered_count|default:0 }}</div>
           <div class="text-sm text-gray-600">Items Delivered</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="impact-score">0</div>
-          <div class="text-sm text-gray-600">Impact Score</div>
+          <div class="text-3xl font-bold text-gray-900" id="impact-score">{{ kpis.total_items|default:0 }}</div>
+          <div class="text-sm text-gray-600">Total Items Donated</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="thank-you-notes">0</div>
-          <div class="text-sm text-gray-600">Thank You Notes</div>
+          <div class="text-3xl font-bold text-gray-900" id="thank-you-notes">
+            {% if kpis.avg_rating %}
+              {{ kpis.avg_rating|floatformat:1 }}/5
+            {% else %}
+              --
+            {% endif %}
+          </div>
+          <div class="text-sm text-gray-600">Average Rating</div>
         </div>
       </div>
       <div class="bg-white rounded-xl shadow-md p-8 gradient-hero text-white mb-8">
         <h2 class="text-2xl font-bold mb-2">Ready to make a difference?</h2>
         <p class="opacity-90 mb-4">Share items you no longer need with families who need them</p>
         <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 bg-white text-purple-600">Donate New Item</a>
+      </div>
+      
+      <!-- KPI Details Section -->
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Donation Statistics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="font-semibold text-gray-700 mb-2">Status Breakdown</h4>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Pending Donations:</span>
+                <span class="font-semibold">{{ kpis.pending_count|default:0 }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Delivered Donations:</span>
+                <span class="font-semibold text-green-600">{{ kpis.delivered_count|default:0 }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Total Items Donated:</span>
+                <span class="font-semibold text-blue-600">{{ kpis.total_items|default:0 }}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-semibold text-gray-700 mb-2">Feedback & Impact</h4>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Average Rating:</span>
+                <span class="font-semibold">
+                  {% if kpis.avg_rating %}
+                    {{ kpis.avg_rating|floatformat:2 }}/5.0
+                  {% else %}
+                    No ratings yet
+                  {% endif %}
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Impact Score:</span>
+                <span class="font-semibold text-purple-600">
+                  {% widthratio kpis.total_items|default:0 1 10 %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {% if kpi_sql %}
+        <!-- SQL Debug Information (for development) -->
+        <details class="mt-6">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">View SQL Query Details</summary>
+          <div class="mt-2 p-4 bg-gray-50 rounded-lg">
+            <p class="text-xs text-gray-600 mb-2">SQL Query:</p>
+            <pre class="text-xs text-gray-800 whitespace-pre-wrap">{{ kpi_sql }}</pre>
+            <p class="text-xs text-gray-600 mt-2 mb-1">Parameters:</p>
+            <pre class="text-xs text-gray-800">{{ kpi_params }}</pre>
+          </div>
+        </details>
+        {% endif %}
       </div>
     </div>
 
