@@ -5,7 +5,8 @@ from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth import authenticate, login
-from django.db import connection
+from django.db import connection, transaction, IntegrityError
+from .forms import DonationForm
 import json
 import requests
 import logging
@@ -404,3 +405,122 @@ def ngo_dashboard(request):
         context = {}
     
     return render(request, 'ngo_dashboard.html', context)
+
+
+def create_donation(request):
+    # Check if user is logged in and is a donor
+    user_id = request.session.get('user_id')
+    user_type = request.session.get('user_type')
+    
+    if not user_id or user_type != 'donor':
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = DonationForm(request.POST)
+        if form.is_valid():
+            # Get donor information for city-based NGO assignment
+            try:
+                from api.models import Donor, NGO
+                donor = Donor.objects.get(donor_id=user_id)
+                donor_city = donor.city
+                
+                # Option 1: Using Django ORM with transaction
+                try:
+                    with transaction.atomic():
+                        # Auto-assign NGO by city
+                        ngo = NGO.objects.filter(city=donor_city).first()
+                        
+                        donation = form.save(commit=False)
+                        donation.donor_id = user_id
+                        donation.ngo = ngo
+                        donation.status = 'pending'
+                        donation.save()
+                        
+                    return render(request, 'create_donation.html', {
+                        'form': DonationForm(),  # Reset form
+                        'success': 'Donation submitted successfully!',
+                        'insert_sql': get_insert_sql(),
+                        'stored_procedure': get_stored_procedure(),
+                        'concept': 'INSERT with Foreign Keys, Auto-assignment by city, Transaction'
+                    })
+                    
+                except IntegrityError as e:
+                    form.add_error(None, f"Error saving donation: {e}")
+                
+                # Option 2: Using Stored Procedure (for DBMS demo)
+                # Uncomment below and comment Option 1 for stored procedure demonstration
+                """
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.callproc('SubmitDonation', [
+                            user_id,
+                            form.cleaned_data['title'],
+                            form.cleaned_data['description'],
+                            form.cleaned_data['category'],
+                            form.cleaned_data['quantity'],
+                            donor_city,
+                            form.cleaned_data['image_url']
+                        ])
+                    return render(request, 'create_donation.html', {
+                        'form': DonationForm(),  # Reset form
+                        'success': 'Donation submitted successfully using stored procedure!',
+                        'insert_sql': get_insert_sql(),
+                        'stored_procedure': get_stored_procedure(),
+                        'concept': 'Stored Procedure, Auto-assignment by city, Transaction'
+                    })
+                except Exception as e:
+                    form.add_error(None, f"Stored procedure error: {e}")
+                """
+                    
+            except Exception as e:
+                form.add_error(None, f"Error: {e}")
+    else:
+        form = DonationForm()
+    
+    return render(request, 'create_donation.html', {
+        'form': form,
+        'insert_sql': get_insert_sql(),
+        'stored_procedure': get_stored_procedure(),
+        'concept': 'INSERT with Foreign Keys, Auto-assignment by city, Transaction'
+    })
+
+
+def get_insert_sql():
+    """Return the SQL query for demonstration purposes"""
+    return """
+INSERT INTO api_donation 
+(donor_id, ngo_id, title, description, category, quantity, status, image_url, created_at)
+VALUES 
+(%(donor_id)s, %(ngo_id)s, %(title)s, %(description)s, %(category)s, %(quantity)s, 'pending', %(image_url)s, NOW())
+"""
+
+
+def get_stored_procedure():
+    """Return the MySQL stored procedure for demonstration purposes"""
+    return """
+CREATE PROCEDURE SubmitDonation(
+    IN p_donor_id INT,
+    IN p_title VARCHAR(255),
+    IN p_description TEXT,
+    IN p_category VARCHAR(50),
+    IN p_quantity INT,
+    IN p_city VARCHAR(100),
+    IN p_image_url VARCHAR(255)
+)
+BEGIN
+    DECLARE v_ngo_id INT;
+    
+    START TRANSACTION;
+        -- Auto-assign NGO based on donor's city
+        SELECT ngo_id INTO v_ngo_id
+        FROM api_ngo
+        WHERE city = p_city
+        ORDER BY ngo_id
+        LIMIT 1;
+        
+        -- Insert donation
+        INSERT INTO api_donation (donor_id, ngo_id, title, description, category, quantity, status, image_url, created_at)
+        VALUES (p_donor_id, v_ngo_id, p_title, p_description, p_category, p_quantity, 'pending', p_image_url, NOW());
+    COMMIT;
+END
+"""
