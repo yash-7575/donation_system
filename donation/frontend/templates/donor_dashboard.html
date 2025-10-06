@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block title %}Donor Dashboard — GiveHope{% endblock %}
+{% block content %}
+<div id="donor-scope" class="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-cyan-50 flex">
+  <aside class="w-64 bg-white shadow-lg fixed h-full">
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center"><span class="text-white font-bold">❤</span></div>
+        <span class="text-xl font-bold bg-gradient-to-r from-orange-600 to-purple-600 bg-clip-text text-transparent">GiveHope</span>
+      </div>
+      <div class="flex items-center space-x-3 mt-4">
+        <div class="w-10 h-10 gradient-secondary rounded-full flex items-center justify-center text-white font-bold">D</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-gray-900 truncate" data-user="name">{{ donor.name|default:"Demo Donor" }}</div>
+          <div class="text-xs text-gray-500 truncate">Donor</div>
+        </div>
+      </div>
+    </div>
+    <nav class="p-4 space-y-2">
+      <button data-tab-btn="dashboard" onclick="activateTab('donor-scope','dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-primary text-white shadow-lg">
+        <span>Dashboard</span>
+      </button>
+      <button data-tab-btn="donations" onclick="activateTab('donor-scope','donations')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
+        <span>My Donations</span>
+      </button>
+      <button data-tab-btn="messages" onclick="activateTab('donor-scope','messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
+        <span>Messages</span>
+      </button>
+      <button data-tab-btn="profile" onclick="activateTab('donor-scope','profile')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
+        <span>Profile</span>
+      </button>
+      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 ml-64 p-8">
+    <div data-tab-panel="dashboard" class="animate-fade-in">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, <span data-user="name">{{ donor.name|default:"Demo Donor" }}</span>!</h1>
+        <p class="text-gray-600">Track your donations and see the impact you're making</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <div class="text-3xl font-bold text-gray-900" id="total-donations">0</div>
+          <div class="text-sm text-gray-600">Total Donations</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <div class="text-3xl font-bold text-gray-900" id="delivered-donations">0</div>
+          <div class="text-sm text-gray-600">Items Delivered</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <div class="text-3xl font-bold text-gray-900" id="impact-score">0</div>
+          <div class="text-sm text-gray-600">Impact Score</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <div class="text-3xl font-bold text-gray-900" id="thank-you-notes">0</div>
+          <div class="text-sm text-gray-600">Thank You Notes</div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-md p-8 gradient-hero text-white mb-8">
+        <h2 class="text-2xl font-bold mb-2">Ready to make a difference?</h2>
+        <p class="opacity-90 mb-4">Share items you no longer need with families who need them</p>
+        <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 bg-white text-purple-600">Donate New Item</a>
+      </div>
+    </div>
+
+    <div data-tab-panel="donations" class="hidden animate-fade-in">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">My Donations</h1>
+          <p class="text-gray-600">Manage and track all your donations</p>
+        </div>
+        <a href="#" data-open-modal="donation" class="btn-ripple rounded-lg font-semibold px-6 py-3 gradient-primary text-white">New Donation</a>
+      </div>
+      <div class="grid gap-6" id="donations-list">
+        <!-- Donations will be dynamically loaded here -->
+        <div class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500" id="no-donations-message">
+          <p>You haven't made any donations yet.</p>
+          <p class="mt-2">Click "New Donation" to get started!</p>
+        </div>
+      </div>
+    </div>
+
+    <div data-tab-panel="messages" class="hidden animate-fade-in">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Messages</h1>
+      <div class="grid gap-4" id="messages-list">
+        <!-- Messages will be dynamically loaded here -->
+        <div class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
+          <p>No messages yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div data-tab-panel="profile" class="hidden animate-fade-in max-w-2xl">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Profile Settings</h1>
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex items-center space-x-4 mb-6">
+          <div class="w-20 h-20 gradient-primary rounded-full flex items-center justify-center text-white font-bold text-2xl">D</div>
+          <div>
+            <div class="text-xl font-bold text-gray-900">{{ donor.name|default:"Demo Donor" }}</div>
+            <div class="text-gray-600">{{ donor.email|default:"donor@example.com" }}</div>
+          </div>
+        </div>
+        <form id="profile-form" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.name|default:'' }}" data-user="name">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+              <input type="email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.email|default:'' }}" data-user="email">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+              <input type="tel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.phone|default:'' }}" data-user="phone">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
+              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.city|default:'' }}" data-user="city">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+            <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.address|default:'' }}" data-user="address">
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">State</label>
+              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.state|default:'' }}" data-user="state">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Pincode</label>
+              <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donor.pincode|default:'' }}" data-user="pincode">
+            </div>
+          </div>
+          <button type="submit" class="px-6 py-3 rounded-lg gradient-primary text-white">Update Profile</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Donation Modal -->
+  <div id="donation-modal" data-modal class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0" data-close-modal></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl modal-enter w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+        <h2 class="text-2xl font-bold text-gray-900">Donate New Item</h2>
+        <button class="p-2 hover:bg-gray-100 rounded-full" data-close-modal>✕</button>
+      </div>
+      <form id="donation-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Item Title</label>
+          <input name="title" type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" placeholder="e.g., Winter Coat" required />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+          <textarea name="description" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="Describe the item condition, size, features, etc."></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+            <select name="category" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+              <option value="Clothing">Clothing</option>
+              <option value="Food">Food</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Books">Books</option>
+              <option value="Furniture">Furniture</option>
+              <option value="Toys">Toys</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+            <input name="quantity" type="number" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="1" min="1" required />
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button class="px-6 py-3 rounded-lg border-2" type="button" data-close-modal>Cancel</button>
+          <button type="submit" class="px-6 py-3 rounded-lg gradient-primary text-white">Submit Donation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Success Message Toast -->
+  <div id="success-toast" class="hidden fixed bottom-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50">
+    <div class="flex items-center">
+      <span class="mr-2">✓</span>
+      <span id="success-message">Operation completed successfully!</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

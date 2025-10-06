@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}NGO Dashboard — GiveHope{% endblock %}
+{% block content %}
+<div id="ngo-scope" class="min-h-screen bg-gradient-to-br from-purple-50 via-cyan-50 to-orange-50 flex">
+  <aside class="w-64 bg-white shadow-lg fixed h-full">
+    <div class="p-6 border-b">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-12 h-12 gradient-secondary rounded-xl flex items-center justify-center"><span class="text-white font-bold">❤</span></div>
+        <span class="text-xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">GiveHope</span>
+      </div>
+      <div class="flex items-center space-x-3 mt-4">
+        <div class="w-10 h-10 gradient-secondary rounded-full flex items-center justify-center text-white font-bold">N</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-gray-900 truncate">NGO Admin</div>
+          <div class="text-xs text-gray-500 truncate">NGO Admin</div>
+        </div>
+      </div>
+    </div>
+    <nav class="p-4 space-y-2">
+      <button data-tab-btn="dashboard" onclick="activateTab('ngo-scope','dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-secondary text-white shadow-lg"><span>Dashboard</span></button>
+      <button data-tab-btn="approvals" onclick="activateTab('ngo-scope','approvals')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Approvals</span></button>
+      <button data-tab-btn="matching" onclick="activateTab('ngo-scope','matching')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Match Center</span></button>
+      <button data-tab-btn="users" onclick="activateTab('ngo-scope','users')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Users</span></button>
+      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 ml-64 p-8">
+    <div data-tab-panel="dashboard" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">NGO Dashboard</h1>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">200</div><div class="text-gray-600">Total Donations</div></div>
+        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">150</div><div class="text-gray-600">Total Requests</div></div>
+        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">124</div><div class="text-gray-600">Successful Matches</div></div>
+        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">89</div><div class="text-gray-600">Families Helped</div></div>
+      </div>
+    </div>
+
+    <div data-tab-panel="approvals" class="hidden animate-fade-in">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Pending Approvals</h1>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Donations</h3>
+          <div class="space-y-3">
+            <div class="p-3 bg-orange-50 rounded-lg"><div class="font-semibold text-gray-900">Donation: Winter Coats</div><div class="text-sm text-gray-600">by John Doe</div></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Requests</h3>
+          <div class="space-y-3">
+            <div class="p-3 bg-purple-50 rounded-lg"><div class="font-semibold text-gray-900">Request: Baby Food</div><div class="text-sm text-gray-600">by Jane Smith</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-tab-panel="matching" class="hidden animate-fade-in">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Matching Center</h1>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-md p-6"><h2 class="text-xl font-bold text-gray-900 mb-4">Available Donations</h2><div class="space-y-3"><div class="p-3 rounded-lg border">Coats (5)</div></div></div>
+        <div class="bg-white rounded-xl shadow-md p-6"><h2 class="text-xl font-bold text-gray-900 mb-4">Pending Requests</h2><div class="space-y-3"><div class="p-3 rounded-lg border">Blankets (3)</div></div></div>
+      </div>
+      <div class="mt-8"><a href="#" class="btn-ripple rounded-lg font-semibold px-8 py-4 gradient-secondary text-white">Confirm Match</a></div>
+    </div>
+
+    <div data-tab-panel="users" class="hidden animate-fade-in">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">User Management</h1>
+      <div class="bg-white rounded-xl shadow-md p-6 overflow-x-auto">
+        <table class="w-full">
+          <thead class="border-b-2 border-gray-200">
+            <tr><th class="text-left py-3 px-4 font-semibold text-gray-900">Name</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Email</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Role</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Status</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Joined</th></tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-4">John Doe</td><td class="py-3 px-4 text-gray-600">john.doe@example.com</td><td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">donor</span></td><td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Active</span></td><td class="py-3 px-4 text-gray-600">2024-09-01</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+

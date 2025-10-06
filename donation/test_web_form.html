@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Donor Registration</title>
+</head>
+<body>
+    <h1>Test Donor Registration</h1>
+    <form action="http://127.0.0.1:8000/register/" method="post">
+        <div>
+            <label>Name:</label>
+            <input type="text" name="name" value="Web Test Donor" required><br><br>
+        </div>
+        <div>
+            <label>Email:</label>
+            <input type="email" name="email" value="webtest@example.com" required><br><br>
+        </div>
+        <div>
+            <label>Phone:</label>
+            <input type="text" name="phone" value="9998887777"><br><br>
+        </div>
+        <div>
+            <label>Address:</label>
+            <input type="text" name="address" value="Web Test St"><br><br>
+        </div>
+        <div>
+            <label>City:</label>
+            <input type="text" name="city" value="Web City"><br><br>
+        </div>
+        <div>
+            <label>State:</label>
+            <input type="text" name="state" value="Web State"><br><br>
+        </div>
+        <div>
+            <label>Pincode:</label>
+            <input type="text" name="pincode" value="99999"><br><br>
+        </div>
+        <input type="hidden" name="role" value="donor">
+        <input type="submit" value="Register Donor">
+    </form>
+</body>
+</html>
