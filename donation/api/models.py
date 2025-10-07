@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
 
-
 class NGO(models.Model):
     ngo_id = models.AutoField(primary_key=True)
     ngo_name = models.CharField(max_length=200)
@@ -16,7 +15,6 @@ class NGO(models.Model):
     def __str__(self) -> str:
         return self.ngo_name
 
-
 class Donor(models.Model):
     donor_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150)
@@ -27,7 +25,7 @@ class Donor(models.Model):
     state = models.CharField(max_length=100, blank=True)
     pincode = models.CharField(max_length=12, blank=True)
     password = models.CharField(max_length=128)  # For storing hashed passwords
-
+    
     def set_password(self, raw_password):
         self.password = make_password(raw_password)
 
@@ -36,7 +34,6 @@ class Donor(models.Model):
 
     def __str__(self) -> str:
         return self.name
-
 
 class Recipient(models.Model):
     recipient_id = models.AutoField(primary_key=True)
@@ -53,7 +50,6 @@ class Recipient(models.Model):
     def __str__(self) -> str:
         return self.name
 
-
 class Donation(models.Model):
     donation_id = models.AutoField(primary_key=True)
     donor = models.ForeignKey(Donor, on_delete=models.CASCADE)
@@ -65,7 +61,6 @@ class Donation(models.Model):
     status = models.CharField(max_length=30, default='pending')
     image_url = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
 
 class Feedback(models.Model):
     feedback_id = models.AutoField(primary_key=True)

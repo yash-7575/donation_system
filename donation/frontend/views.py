@@ -9,6 +9,8 @@ import json
 import requests
 import logging
 
+from api.models import Donor, Recipient
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -210,4 +212,10 @@ def recipient_dashboard(request):
 
 
 def ngo_dashboard(request):
-    return render(request, 'ngo_dashboard.html')
+    donor_data = Donor.objects.all()
+    recipient_data = Recipient.objects.all()
+    data = {
+        'donors': donor_data,
+        'recipients': recipient_data
+    }
+    return render(request, 'ngo_dashboard.html', data)

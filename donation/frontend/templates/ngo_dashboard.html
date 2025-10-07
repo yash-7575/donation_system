@@ -9,75 +9,350 @@
         <span class="text-xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">GiveHope</span>
       </div>
       <div class="flex items-center space-x-3 mt-4">
-        <div class="w-10 h-10 gradient-secondary rounded-full flex items-center justify-center text-white font-bold">N</div>
+        <div class="w-10 h-10 gradient-secondary rounded-full flex items-center justify-center text-white font-bold">H</div>
         <div class="flex-1 min-w-0">
-          <div class="font-semibold text-gray-900 truncate">NGO Admin</div>
-          <div class="text-xs text-gray-500 truncate">NGO Admin</div>
+          <div class="font-semibold text-gray-900 truncate">Hope Foundation</div>
+          <div class="text-xs text-gray-500 truncate">Mumbai, Maharashtra</div>
         </div>
       </div>
     </div>
     <nav class="p-4 space-y-2">
-      <button data-tab-btn="dashboard" onclick="activateTab('ngo-scope','dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-secondary text-white shadow-lg"><span>Dashboard</span></button>
-      <button data-tab-btn="approvals" onclick="activateTab('ngo-scope','approvals')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Approvals</span></button>
-      <button data-tab-btn="matching" onclick="activateTab('ngo-scope','matching')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Match Center</span></button>
-      <button data-tab-btn="users" onclick="activateTab('ngo-scope','users')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Users</span></button>
-      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+      <button data-tab-btn="dashboard" onclick="activateTab('ngo-scope','dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-secondary text-white shadow-lg"><span>📊 Dashboard</span></button>
+      <button data-tab-btn="donors" onclick="activateTab('ngo-scope','donors')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>👥 Donors</span></button>
+      <button data-tab-btn="recipients" onclick="activateTab('ngo-scope','recipients')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>🎯 Recipients</span></button>
+      <button data-tab-btn="dbms" onclick="activateTab('ngo-scope','dbms')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>🗄️ DBMS Demonstrations</span></button>
+      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">🚪 Logout</a>
     </nav>
   </aside>
 
   <main class="flex-1 ml-64 p-8">
     <div data-tab-panel="dashboard" class="animate-fade-in">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">NGO Dashboard</h1>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">200</div><div class="text-gray-600">Total Donations</div></div>
-        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">150</div><div class="text-gray-600">Total Requests</div></div>
-        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">124</div><div class="text-gray-600">Successful Matches</div></div>
-        <div class="bg-white rounded-xl shadow-md p-6 text-center"><div class="text-3xl font-bold text-gray-900">89</div><div class="text-gray-600">Families Helped</div></div>
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, Hope Foundation!</h1>
+        <p class="text-gray-600">Manage donations and see the impact you're making in Mumbai region</p>
+      </div>
+      
+      <!-- Simplified Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6 text-center">
+          <div class="w-12 h-12 gradient-secondary rounded-xl flex items-center justify-center mx-auto mb-4">
+            <span class="text-white font-bold">🎁</span>
+          </div>
+          <div class="text-3xl font-bold text-gray-900">47</div>
+          <div class="text-gray-600">Total Donations Handled</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6 text-center">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(45deg, #54a0ff, #5f27cd);">
+            <span class="text-white font-bold">✅</span>
+          </div>
+          <div class="text-3xl font-bold text-gray-900">32</div>
+          <div class="text-gray-600">Successfully Delivered</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6 text-center">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(45deg, #00d2d3, #54a0ff);">
+            <span class="text-white font-bold">👥</span>
+          </div>
+          <div class="text-3xl font-bold text-gray-900">128</div>
+          <div class="text-gray-600">Families Helped</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6 text-center">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(45deg, #ff9ff3, #f368e0);">
+            <span class="text-white font-bold">⭐</span>
+          </div>
+          <div class="text-3xl font-bold text-gray-900">4.8</div>
+          <div class="text-gray-600">Average Rating</div>
+        </div>
       </div>
     </div>
 
-    <div data-tab-panel="approvals" class="hidden animate-fade-in">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">Pending Approvals</h1>
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Donations</h3>
-          <div class="space-y-3">
-            <div class="p-3 bg-orange-50 rounded-lg"><div class="font-semibold text-gray-900">Donation: Winter Coats</div><div class="text-sm text-gray-600">by John Doe</div></div>
+    <div data-tab-panel="donors" class="animate-fade-in hidden">
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">👥 Donors List</h1>
+        <p class="text-gray-600">View all registered donors in the system</p>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white rounded-lg overflow-hidden">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">City</th>
+                <th class="py-3 px-4 text-left">State</th>
+              </tr>
+            </thead>
+            <tbody id="donors-table-body">
+              {% for donor in donors %}
+              <tr class="border-b hover:bg-gray-50">
+                <td class="py-3 px-4">{{ donor.name }}</td>
+                <td class="py-3 px-4">{{ donor.email }}</td>
+                <td class="py-3 px-4">{{ donor.phone|default:"N/A" }}</td>
+                <td class="py-3 px-4">{{ donor.city|default:"N/A" }}</td>
+                <td class="py-3 px-4">{{ donor.state|default:"N/A" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="py-4 text-center text-gray-500">No donor data available.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div data-tab-panel="recipients" class="animate-fade-in hidden">
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">🎯 Recipients List</h1>
+        <p class="text-gray-600">View all registered recipients in the system</p>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white rounded-lg overflow-hidden">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Family Size</th>
+                <th class="py-3 px-4 text-left">City</th>
+                <th class="py-3 px-4 text-left">Urgency</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for recipient in recipients %}
+              <tr class="border-b hover:bg-gray-50">
+                <td class="py-3 px-4">{{ recipient.name }}</td>
+                <td class="py-3 px-4">{{ recipient.email }}</td>
+                <td class="py-3 px-4">{{ recipient.phone|default:"N/A" }}</td>
+                <td class="py-3 px-4">{{ recipient.family_size }}</td>
+                <td class="py-3 px-4">{{ recipient.city|default:"N/A" }}</td>
+                <td class="py-3 px-4">
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold 
+                    {% if recipient.urgency == 'high' %}bg-red-100 text-red-800
+                    {% elif recipient.urgency == 'medium' %}bg-yellow-100 text-yellow-800
+                    {% elif recipient.urgency == 'low' %}bg-green-100 text-green-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ recipient.urgency|capfirst }}
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="py-4 text-center text-gray-500">No recipient data available.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div data-tab-panel="dbms" class="animate-fade-in hidden">
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">🗄️ Database Concepts Demonstration</h1>
+        <p class="text-gray-600">Interactive demonstration of SQL JOIN operations</p>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button class="px-4 py-2 rounded-lg bg-purple-600 text-white">Joins</button>
+        </div>
+        
+        <div class="mb-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">🔗 SQL Joins Demonstration</h3>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="showJoinQuery('inner')" class="px-4 py-2 rounded-lg gradient-secondary text-white">Inner Join: Donations + Donors</button>
+            <button onclick="showJoinQuery('left')" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">Left Join: Donations + Feedback</button>
+            <button onclick="showJoinQuery('self')" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">Self Join: Partner NGOs</button>
+          </div>
+          
+          <div id="query-result" class="bg-gray-50 rounded-lg p-4 mb-4">
+            <p id="query-description" class="text-center text-gray-500 py-4">Click a button above to see SQL joins in action</p>
+            <div id="sql-query" class="bg-gray-800 text-white rounded-lg p-4 font-mono text-sm hidden">
+              <p><strong>SQL Query:</strong></p>
+              <pre id="query-content"></pre>
+            </div>
+          </div>
+          
+          <div id="join-results" class="overflow-x-auto hidden">
+            <table class="min-w-full bg-white rounded-lg overflow-hidden">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="py-2 px-4 text-left">Title</th>
+                  <th class="py-2 px-4 text-left">Donor Name</th>
+                  <th class="py-2 px-4 text-left">City</th>
+                  <th class="py-2 px-4 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody id="results-body">
+                <!-- Results will be populated here -->
+              </tbody>
+            </table>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h3 class="text-xl font-bold text-gray-900 mb-4">Requests</h3>
-          <div class="space-y-3">
-            <div class="p-3 bg-purple-50 rounded-lg"><div class="font-semibold text-gray-900">Request: Baby Food</div><div class="text-sm text-gray-600">by Jane Smith</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div data-tab-panel="matching" class="hidden animate-fade-in">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">Matching Center</h1>
-      <div class="grid md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow-md p-6"><h2 class="text-xl font-bold text-gray-900 mb-4">Available Donations</h2><div class="space-y-3"><div class="p-3 rounded-lg border">Coats (5)</div></div></div>
-        <div class="bg-white rounded-xl shadow-md p-6"><h2 class="text-xl font-bold text-gray-900 mb-4">Pending Requests</h2><div class="space-y-3"><div class="p-3 rounded-lg border">Blankets (3)</div></div></div>
-      </div>
-      <div class="mt-8"><a href="#" class="btn-ripple rounded-lg font-semibold px-8 py-4 gradient-secondary text-white">Confirm Match</a></div>
-    </div>
-
-    <div data-tab-panel="users" class="hidden animate-fade-in">
-      <h1 class="text-3xl font-bold text-gray-900 mb-8">User Management</h1>
-      <div class="bg-white rounded-xl shadow-md p-6 overflow-x-auto">
-        <table class="w-full">
-          <thead class="border-b-2 border-gray-200">
-            <tr><th class="text-left py-3 px-4 font-semibold text-gray-900">Name</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Email</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Role</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Status</th><th class="text-left py-3 px-4 font-semibold text-gray-900">Joined</th></tr>
-          </thead>
-          <tbody>
-            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-4">John Doe</td><td class="py-3 px-4 text-gray-600">john.doe@example.com</td><td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">donor</span></td><td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Active</span></td><td class="py-3 px-4 text-gray-600">2024-09-01</td></tr>
-          </tbody>
-        </table>
       </div>
     </div>
   </main>
 </div>
+
+<script>
+  // Tab activation function
+  function activateTab(scopeId, tabName) {
+    // Hide all tab panels
+    document.querySelectorAll(`[data-tab-panel]`).forEach(panel => {
+      panel.classList.add('hidden');
+      panel.classList.remove('animate-fade-in');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll(`[data-tab-btn]`).forEach(btn => {
+      btn.classList.remove('gradient-secondary', 'text-white', 'shadow-lg');
+      btn.classList.add('text-gray-700');
+    });
+    
+    // Show the selected tab panel
+    const activePanel = document.querySelector(`[data-tab-panel="${tabName}"]`);
+    if (activePanel) {
+      activePanel.classList.remove('hidden');
+      setTimeout(() => {
+        activePanel.classList.add('animate-fade-in');
+      }, 10);
+    }
+    
+    // Add active class to the selected tab button
+    const activeButton = document.querySelector(`[data-tab-btn="${tabName}"]`);
+    if (activeButton) {
+      activeButton.classList.remove('text-gray-700');
+      activeButton.classList.add('gradient-secondary', 'text-white', 'shadow-lg');
+    }
+    
+    // If donors tab is activated, fetch donors data
+    if (tabName === 'donors') {
+      fetchDonorsData();
+    }
+  }
+  
+  // Function to fetch donors data from the API
+  function fetchDonorsData() {
+    fetch('/api/donors/')
+      .then(response => response.json())
+      .then(data => {
+        const donorsTableBody = document.getElementById('donors-table-body');
+        donorsTableBody.innerHTML = '';
+        
+        if (data.length === 0) {
+          donorsTableBody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-gray-500">No donors found</td></tr>';
+          return;
+        }
+        
+        data.forEach(donor => {
+          const row = document.createElement('tr');
+          row.className = 'border-b hover:bg-gray-50';
+          row.innerHTML = `
+            <td class="py-3 px-4">${donor.name}</td>
+            <td class="py-3 px-4">${donor.email}</td>
+            <td class="py-3 px-4">${donor.phone || 'N/A'}</td>
+            <td class="py-3 px-4">${donor.city || 'N/A'}</td>
+            <td class="py-3 px-4">${donor.state || 'N/A'}</td>
+          `;
+          donorsTableBody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching donors:', error);
+        const donorsTableBody = document.getElementById('donors-table-body');
+        donorsTableBody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-500">Error loading donors data</td></tr>';
+      });
+  }
+  
+  // Function to display SQL queries for joins
+  function showJoinQuery(joinType) {
+    const queryDescription = document.getElementById('query-description');
+    const sqlQuery = document.getElementById('sql-query');
+    const queryContent = document.getElementById('query-content');
+    const joinResults = document.getElementById('join-results');
+    const resultsBody = document.getElementById('results-body');
+    
+    // Clear previous results
+    resultsBody.innerHTML = '';
+    joinResults.classList.add('hidden');
+    
+    let description = '';
+    let query = '';
+    
+    switch(joinType) {
+      case 'inner':
+        description = 'INNER JOIN combines records from two tables when there are matching values in both tables.';
+        query = `SELECT d.title, dn.name, dn.city, d.status\nFROM donations d\nINNER JOIN donors dn ON d.donor_id = dn.donor_id\nWHERE d.ngo_id = 1;`;
+        // Sample data for demonstration
+        const innerData = [
+          {title: 'Winter Coats', name: 'John Smith', city: 'Mumbai', status: 'Delivered'},
+          {title: 'Books Collection', name: 'Sarah Johnson', city: 'Pune', status: 'In Transit'},
+          {title: 'Kitchen Utensils', name: 'Rajesh Kumar', city: 'Mumbai', status: 'Pending'}
+        ];
+        populateResults(innerData);
+        break;
+      case 'left':
+        description = 'LEFT JOIN returns all records from the left table and matched records from the right table.';
+        query = `SELECT d.title, f.rating, f.comment\nFROM donations d\nLEFT JOIN feedback f ON d.donation_id = f.donation_id\nWHERE d.ngo_id = 1;`;
+        // Sample data for demonstration
+        const leftData = [
+          {title: 'School Supplies', rating: '5', comment: 'Excellent quality items'},
+          {title: 'Clothing Drive', rating: null, comment: null},
+          {title: 'Food Packets', rating: '4', comment: 'Good variety of food items'}
+        ];
+        populateResults(leftData);
+        break;
+      case 'self':
+        description = 'SELF JOIN is used to join a table with itself to compare rows within the same table.';
+        query = `SELECT ngo1.name AS ngo_name, ngo2.name AS partner_name
+FROM ngos ngo1
+JOIN partnerships p ON ngo1.ngo_id = p.ngo_id
+JOIN ngos ngo2 ON p.partner_id = ngo2.ngo_id
+WHERE ngo1.ngo_id = 1;`;
+        // Sample data for demonstration
+        const selfData = [
+          {ngo_name: 'Hope Foundation', partner_name: 'Helping Hands'},
+          {ngo_name: 'Hope Foundation', partner_name: 'Community Care'},
+          {ngo_name: 'Hope Foundation', partner_name: 'Urban Support Network'}
+        ];
+        populateResults(selfData);
+        break;
+    }
+    
+    queryDescription.textContent = description;
+    queryContent.textContent = query;
+    sqlQuery.classList.remove('hidden');
+    joinResults.classList.remove('hidden');
+  }
+  
+  // Function to populate results table
+  function populateResults(data) {
+    const resultsBody = document.getElementById('results-body');
+    resultsBody.innerHTML = '';
+    
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b';
+      
+      Object.values(row).forEach(value => {
+        const td = document.createElement('td');
+        td.className = 'py-2 px-4';
+        td.textContent = value || 'NULL';
+        tr.appendChild(td);
+      });
+      
+      resultsBody.appendChild(tr);
+    });
+  }
+  
+  // Initialize the dashboard tab as active
+  document.addEventListener('DOMContentLoaded', function() {
+    activateTab('ngo-scope', 'dashboard');
+  });
+</script>
 {% endblock %}
-
-
