@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}Donor Dashboard — GiveHope{% endblock %}
 {% block content %}
+<script>
+  // Pass user ID to JavaScript
+  window.CURRENT_USER_ID = {{ donor.donor_id|default:'null' }};
+  console.log('🔍 Django template set CURRENT_USER_ID:', window.CURRENT_USER_ID);
+</script>
 <div id="donor-scope" class="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-cyan-50 flex">
   <aside class="w-64 bg-white shadow-lg fixed h-full">
     <div class="p-6 border-b border-gray-200">
@@ -20,7 +25,10 @@
       <button data-tab-btn="dashboard" onclick="activateTab('donor-scope','dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-primary text-white shadow-lg">
         <span>Dashboard</span>
       </button>
-      <button data-tab-btn="donations" onclick="activateTab('donor-scope','donations')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
+      {% comment %} <button data-tab-btn="donations" onclick="activateTab('donor-scope','donations')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
+        <span>My Donations</span>
+      </button> {% endcomment %}
+      <button data-tab-btn="joins" onclick="activateTab('donor-scope','joins')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
         <span>My Donations</span>
       </button>
       <button data-tab-btn="messages" onclick="activateTab('donor-scope','messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
@@ -147,6 +155,54 @@
         <div class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500" id="no-donations-message">
           <p>You haven't made any donations yet.</p>
           <p class="mt-2">Click "New Donation" to get started!</p>
+        </div>
+      </div>
+    </div>
+
+    <div data-tab-panel="joins" class="hidden animate-fade-in">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">DBMS Operations - JOIN Queries</h1>
+        <p class="text-gray-600">Explore different types of SQL JOIN operations with live database data</p>
+      </div>
+      
+      <!-- JOIN operations section -->
+      <div class="joins-section bg-white rounded-xl shadow-md p-8 mb-8">
+        <!-- Buttons to trigger different joins -->
+        <div class="join-buttons flex gap-3 flex-wrap mb-6">
+          <button onclick="showJoin('equijoin')" class="join-btn gradient-primary text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            My Donation History
+          </button>
+          <button onclick="showJoin('non-equijoin')" class="join-btn bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            Compare Donor
+          </button>
+          <button onclick="showJoin('self-join')" class="join-btn bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            Donors in My City
+          </button>
+          <button onclick="showJoin('natural-join')" class="join-btn bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            My Donation Details
+          </button>
+          <button onclick="showJoin('left-join')" class="join-btn bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            My Complete Activity Report
+          </button>
+          <button onclick="showJoin('right-join')" class="join-btn bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            All Platform Donations
+          </button>
+          <button onclick="showJoin('full-join')" class="join-btn bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg transform hover:-translate-y-1">
+            Complete Platform Overview
+          </button>
+        </div>
+        
+        <!-- Display SQL Query -->
+        <div class="sql-display bg-gray-50 border-l-4 border-green-500 p-6 rounded-lg" id="sql-query" style="display:none;">
+          <h3 class="text-lg font-bold text-gray-900 mb-3">SQL Query:</h3>
+          <pre id="query-text" class="bg-gray-800 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono"></pre>
+        </div>
+        
+        <!-- Display Results Table -->
+        <div class="results-container mt-6">
+          <h3 id="result-title" class="text-xl font-bold text-gray-900 mb-4">Select a JOIN operation to see results</h3>
+          <div id="results-table" class="overflow-x-auto"></div>
+          <div id="results-stats" class="mt-4 text-sm text-gray-600" style="display:none;"></div>
         </div>
       </div>
     </div>

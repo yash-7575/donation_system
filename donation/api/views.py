@@ -3,6 +3,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache  # ← Already imported
+from django.http import JsonResponse
 from .models import Donor, Recipient, NGO, Donation, Feedback
 from .serializers import DonorSerializer, RecipientSerializer, NGOSerializer, DonationSerializer, FeedbackSerializer
 
@@ -13,9 +15,9 @@ def health(request):
     return Response({'status': 'ok'})
 
 
+@never_cache  # ← ADD HERE
 @api_view(['GET'])
 def superadmin_demo(request):
-    # Demonstrate a couple of SQL features for the viva; expand as needed
     with connection.cursor() as cursor:
         cursor.execute("SELECT COUNT(*) FROM api_donation")
         donation_count = cursor.fetchone()[0]
@@ -27,16 +29,15 @@ def superadmin_demo(request):
     })
 
 
+@never_cache  # ← ADD HERE
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def donors_list_create(request):
     if request.method == 'GET':
         donors = Donor.objects.all()
-        # Don't include password in the response
         serializer = DonorSerializer(donors, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        # Handle password hashing
         password = request.data.get('password')
         serializer = DonorSerializer(data=request.data)
         if serializer.is_valid():
@@ -44,22 +45,20 @@ def donors_list_create(request):
             if password:
                 donor.set_password(password)
                 donor.save()
-            # Don't include password in the response
             response_data = serializer.data
             return Response(response_data, status=201)
         return Response(serializer.errors, status=400)
 
 
+@never_cache  # ← ADD HERE
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def recipients_list_create(request):
     if request.method == 'GET':
         recipients = Recipient.objects.all()
-        # Don't include password in the response
         serializer = RecipientSerializer(recipients, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        # Handle password hashing
         password = request.data.get('password')
         serializer = RecipientSerializer(data=request.data)
         if serializer.is_valid():
@@ -67,22 +66,20 @@ def recipients_list_create(request):
             if password:
                 recipient.set_password(password)
                 recipient.save()
-            # Don't include password in the response
             response_data = serializer.data
             return Response(response_data, status=201)
         return Response(serializer.errors, status=400)
 
 
+@never_cache  
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def ngos_list_create(request):
     if request.method == 'GET':
         ngos = NGO.objects.all()
-        # Don't include password in the response
         serializer = NGOSerializer(ngos, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        # Handle password hashing
         password = request.data.get('password')
         serializer = NGOSerializer(data=request.data)
         if serializer.is_valid():
@@ -90,12 +87,12 @@ def ngos_list_create(request):
             if password:
                 ngo.set_password(password)
                 ngo.save()
-            # Don't include password in the response
             response_data = serializer.data
             return Response(response_data, status=201)
         return Response(serializer.errors, status=400)
 
 
+@never_cache  
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def donations_list_create(request):
@@ -108,6 +105,7 @@ def donations_list_create(request):
     return Response(serializer.data)
 
 
+@never_cache  
 @api_view(['GET'])
 def donor_detail(request, donor_id):
     try:
@@ -118,6 +116,7 @@ def donor_detail(request, donor_id):
         return Response({'error': 'Donor not found'}, status=404)
 
 
+@never_cache  
 @api_view(['GET'])
 def recipient_detail(request, recipient_id):
     try:
@@ -128,6 +127,7 @@ def recipient_detail(request, recipient_id):
         return Response({'error': 'Recipient not found'}, status=404)
 
 
+@never_cache  
 @api_view(['GET'])
 def ngo_detail(request, ngo_id):
     try:
@@ -138,10 +138,21 @@ def ngo_detail(request, ngo_id):
         return Response({'error': 'NGO not found'}, status=404)
 
 
+@never_cache  
+@api_view(['GET'])
+def donor_donations(request, donor_id):
+    try:
+        donor = Donor.objects.get(donor_id=donor_id)
+        donations = Donation.objects.filter(donor=donor).select_related('ngo').order_by('-created_at')
+        serializer = DonationSerializer(donations, many=True)
+        return Response(serializer.data)
+    except Donor.DoesNotExist:
+        return Response({'error': 'Donor not found'}, status=404)
+
+
 @csrf_exempt
 @api_view(['POST'])
 def match_donation(request):
-    # naive matching by city: assign an NGO in same city as donor if available
     donation_id = request.data.get('donation_id')
     try:
         donation = Donation.objects.select_related('donor').get(donation_id=donation_id)
@@ -154,3 +165,132 @@ def match_donation(request):
         donation.save()
         return Response({'matched': True, 'ngo_id': ngo.ngo_id})
     return Response({'matched': False})
+
+
+@never_cache  # ← ALREADY ADDED ✓
+@api_view(['GET'])
+def join_operations(request, join_type):
+    """Handle different types of JOIN queries for DBMS demonstration"""
+    
+    queries = {
+        'equijoin': """
+            SELECT 
+                api_donor.name AS donor_name,
+                api_donor.city,
+                api_donation.title,
+                api_donation.category,
+                api_donation.status
+            FROM api_donor
+            INNER JOIN api_donation 
+            ON api_donor.donor_id = api_donation.donor_id
+            ORDER BY api_donor.name
+        """,
+        
+        'non-equijoin': """
+            SELECT 
+                d1.name AS donor1,
+                d1.city AS city1,
+                d2.name AS donor2,
+                d2.city AS city2
+            FROM api_donor d1
+            JOIN api_donor d2 
+            ON d1.donor_id < d2.donor_id
+            LIMIT 20
+        """,
+        
+        'self-join': """
+            SELECT 
+                d1.name AS donor1,
+                d2.name AS donor2,
+                d1.city AS common_city
+            FROM api_donor d1
+            INNER JOIN api_donor d2 
+            ON d1.city = d2.city 
+            WHERE d1.donor_id < d2.donor_id
+            ORDER BY d1.city
+        """,
+        
+        'natural-join': """
+            SELECT 
+                api_donor.name,
+                api_donor.city,
+                api_donation.title,
+                api_donation.quantity
+            FROM api_donor
+            INNER JOIN api_donation 
+            ON api_donor.donor_id = api_donation.donor_id
+            ORDER BY api_donor.name
+        """,
+        
+        'left-join': """
+            SELECT 
+                api_donor.donor_id,
+                api_donor.name,
+                api_donor.city,
+                COUNT(api_donation.donation_id) AS donation_count,
+                COALESCE(SUM(api_donation.quantity), 0) AS total_items
+            FROM api_donor
+            LEFT OUTER JOIN api_donation 
+            ON api_donor.donor_id = api_donation.donor_id
+            GROUP BY api_donor.donor_id, api_donor.name, api_donor.city
+            ORDER BY api_donor.name
+        """,
+        
+        'right-join': """
+            SELECT 
+                api_donation.title,
+                api_donation.category,
+                api_donor.name AS donor_name,
+                api_donor.city
+            FROM api_donor
+            RIGHT OUTER JOIN api_donation 
+            ON api_donor.donor_id = api_donation.donor_id
+            ORDER BY api_donation.title
+        """,
+        
+        'full-join': """
+            SELECT 
+                api_donor.name AS donor_name,
+                api_donation.title AS donation_title,
+                api_donation.category,
+                'Left Join' AS join_source
+            FROM api_donor
+            LEFT JOIN api_donation ON api_donor.donor_id = api_donation.donor_id
+            UNION
+            SELECT 
+                api_donor.name AS donor_name,
+                api_donation.title AS donation_title,
+                api_donation.category,
+                'Right Join' AS join_source
+            FROM api_donor
+            RIGHT JOIN api_donation ON api_donor.donor_id = api_donation.donor_id
+            WHERE api_donor.donor_id IS NULL
+            ORDER BY donor_name, donation_title
+        """
+    }
+    
+    if join_type not in queries:
+        return JsonResponse({'error': 'Invalid join type'}, status=400)
+    
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(queries[join_type])
+            columns = [col[0] for col in cursor.description]
+            results = [
+                dict(zip(columns, row))
+                for row in cursor.fetchall()
+            ]
+        
+        return JsonResponse({
+            'success': True,
+            'results': results,
+            'query': queries[join_type],
+            'join_type': join_type,
+            'count': len(results)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

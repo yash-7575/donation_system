@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Donor ID</title>
+</head>
+<body>
+    <h1>Debug Donor ID Detection</h1>
+    
+    <script>
+        // Simulate the same setup as donor dashboard
+        window.CURRENT_USER_ID = 3; // Simulate donor 3 who has donations
+        
+        // Copy the getCurrentUserId function
+        function getCurrentUserId() {
+            const userElements = document.querySelectorAll('[data-user]');
+            console.log('Found user elements:', userElements.length);
+            
+            for (let element of userElements) {
+                console.log('Element:', element, 'Dataset:', element.dataset);
+                if (element.dataset.userId) {
+                    console.log('Found userId in dataset:', element.dataset.userId);
+                    return element.dataset.userId;
+                }
+            }
+            
+            console.log('Fallback to window.CURRENT_USER_ID:', window.CURRENT_USER_ID);
+            return window.CURRENT_USER_ID || null;
+        }
+        
+        // Test the function
+        console.log('Current User ID:', getCurrentUserId());
+        
+        // Test the actual API call
+        async function testDonationLoad() {
+            const currentUserId = getCurrentUserId();
+            console.log('Testing with user ID:', currentUserId);
+            
+            if (!currentUserId) {
+                console.error('❌ No user ID found!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/donors/${currentUserId}/donations/`);
+                console.log('API Response status:', response.status);
+                
+                if (response.ok) {
+                    const donations = await response.json();
+                    console.log('✅ Donations loaded:', donations.length, 'donations');
+                    console.log('Sample:', donations[0]);
+                } else {
+                    console.error('❌ API Error:', response.status);
+                }
+            } catch (error) {
+                console.error('❌ Network Error:', error);
+            }
+        }
+        
+        // Run the test
+        testDonationLoad();
+    </script>
+    
+    <!-- Add some test elements -->
+    <div data-user="name">Test Donor</div>
+    <div data-user="email">test@example.com</div>
+</body>
+</html>

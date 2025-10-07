@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOIN Operations Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .join-btn { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 10px 20px; margin: 5px;
+            border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+        .join-btn:hover { transform: translateY(-2px); }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .results-table th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        .results-table td { padding: 10px; border-bottom: 1px solid #ddd; }
+        .results-table tr:hover { background: #f5f5f5; }
+        .sql-display { background: #f4f4f4; border-left: 4px solid #4CAF50; padding: 15px; margin: 15px 0; }
+        .sql-display pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>JOIN Operations Test</h1>
+    <p>Test the JOIN operations API endpoints directly</p>
+    
+    <div class="join-buttons">
+        <button class="join-btn" onclick="testJoin('equijoin')">Equi Join</button>
+        <button class="join-btn" onclick="testJoin('non-equijoin')">Non-Equi Join</button>
+        <button class="join-btn" onclick="testJoin('self-join')">Self Join</button>
+        <button class="join-btn" onclick="testJoin('natural-join')">Natural Join</button>
+        <button class="join-btn" onclick="testJoin('left-join')">Left Outer Join</button>
+        <button class="join-btn" onclick="testJoin('right-join')">Right Outer Join</button>
+        <button class="join-btn" onclick="testJoin('full-join')">Full Outer Join</button>
+    </div>
+    
+    <div id="sql-query" class="sql-display" style="display:none;">
+        <h3>SQL Query:</h3>
+        <pre id="query-text"></pre>
+    </div>
+    
+    <div class="results-container">
+        <h3 id="result-title">Select a JOIN operation</h3>
+        <div id="results-table"></div>
+    </div>
+
+    <script>
+        const joinQueries = {
+            'equijoin': 'SELECT api_donor.name AS donor_name, api_donor.city, api_donation.title, api_donation.category, api_donation.status FROM api_donor INNER JOIN api_donation ON api_donor.donor_id = api_donation.donor_id ORDER BY api_donor.name',
+            'non-equijoin': 'SELECT d1.name AS donor1, d1.city AS city1, d2.name AS donor2, d2.city AS city2 FROM api_donor d1 JOIN api_donor d2 ON d1.donor_id < d2.donor_id LIMIT 20',
+            'self-join': 'SELECT d1.name AS donor1, d2.name AS donor2, d1.city AS common_city FROM api_donor d1 INNER JOIN api_donor d2 ON d1.city = d2.city WHERE d1.donor_id < d2.donor_id ORDER BY d1.city',
+            'natural-join': 'SELECT api_donor.name, api_donor.city, api_donation.title, api_donation.quantity FROM api_donor INNER JOIN api_donation ON api_donor.donor_id = api_donation.donor_id ORDER BY api_donor.name',
+            'left-join': 'SELECT api_donor.donor_id, api_donor.name, api_donor.city, COUNT(api_donation.donation_id) AS donation_count, COALESCE(SUM(api_donation.quantity), 0) AS total_items FROM api_donor LEFT OUTER JOIN api_donation ON api_donor.donor_id = api_donation.donor_id GROUP BY api_donor.donor_id, api_donor.name, api_donor.city ORDER BY api_donor.name',
+            'right-join': 'SELECT api_donation.title, api_donation.category, api_donor.name AS donor_name, api_donor.city FROM api_donor RIGHT OUTER JOIN api_donation ON api_donor.donor_id = api_donation.donor_id ORDER BY api_donation.title',
+            'full-join': 'SELECT api_donor.name AS donor_name, api_donation.title AS donation_title, api_donation.category, \'Left Join\' AS join_source FROM api_donor LEFT JOIN api_donation ON api_donor.donor_id = api_donation.donor_id UNION SELECT api_donor.name AS donor_name, api_donation.title AS donation_title, api_donation.category, \'Right Join\' AS join_source FROM api_donor RIGHT JOIN api_donation ON api_donor.donor_id = api_donation.donor_id WHERE api_donor.donor_id IS NULL ORDER BY donor_name, donation_title'
+        };
+
+        async function testJoin(joinType) {
+            document.getElementById('sql-query').style.display = 'block';
+            document.getElementById('query-text').textContent = joinQueries[joinType];
+            document.getElementById('result-title').textContent = joinType.charAt(0).toUpperCase() + joinType.slice(1).replace('-', ' ') + ' Results';
+            document.getElementById('results-table').innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/joins/${joinType}/`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayTable(data.results);
+                } else {
+                    document.getElementById('results-table').innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('results-table').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function displayTable(results) {
+            const container = document.getElementById('results-table');
+            
+            if (!results || results.length === 0) {
+                container.innerHTML = '<p>No results found.</p>';
+                return;
+            }
+            
+            let html = '<table class="results-table"><thead><tr>';
+            Object.keys(results[0]).forEach(key => {
+                html += `<th>${key.replace(/_/g, ' ').toUpperCase()}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            results.forEach(row => {
+                html += '<tr>';
+                Object.values(row).forEach(value => {
+                    html += `<td>${value !== null ? value : 'N/A'}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

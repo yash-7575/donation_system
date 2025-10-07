@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .success { border-left: 4px solid #4CAF50; background: #f0f8f0; }
+        .error { border-left: 4px solid #f44336; background: #fff0f0; }
+        .info { border-left: 4px solid #2196F3; background: #f0f8ff; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45a049; }
+        .btn-blue { background: #2196F3; }
+        .btn-blue:hover { background: #1976D2; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .test-result { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Donation System Debug Tool</h1>
+        
+        <div class="card info">
+            <h3>📋 Instructions</h3>
+            <p>This tool helps debug the "My Donations" feature. Follow these steps:</p>
+            <ol>
+                <li>Make sure you're logged in as a donor</li>
+                <li>Check if your user ID is detected correctly</li>
+                <li>Test the API connection</li>
+                <li>Verify donations are loading</li>
+            </ol>
+        </div>
+        
+        <div class="card">
+            <h3>🔧 Debug Tests</h3>
+            <button onclick="checkUserSession()">1. Check User Session</button>
+            <button onclick="testUserIdDetection()" class="btn-blue">2. Test User ID Detection</button>
+            <button onclick="testApiConnection()">3. Test API Connection</button>
+            <button onclick="testDonationLoad()" class="btn-blue">4. Load Donations</button>
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            
+            <div id="test-results"></div>
+        </div>
+        
+        <div class="card">
+            <h3>💡 Quick Fixes</h3>
+            <p>If you're having issues:</p>
+            <ul>
+                <li><a href="/login/" target="_blank">🔑 Login Page</a> - Make sure you're logged in</li>
+                <li><a href="/api/donors/" target="_blank">👥 Donors API</a> - Check if API is working</li>
+                <li><a href="/donor/" target="_blank">🏠 Donor Dashboard</a> - Go to main dashboard</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        
+        function addResult(test, status, message, details = '') {
+            const result = { test, status, message, details, timestamp: new Date() };
+            testResults.push(result);
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = `
+                <h4>📊 Test Results</h4>
+                ${testResults.map(r => `
+                    <div class="test-result ${r.status}">
+                        <strong>${r.status === 'success' ? '✅' : '❌'} ${r.test}:</strong> ${r.message}
+                        ${r.details ? `<pre>${r.details}</pre>` : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        async function checkUserSession() {
+            try {
+                const response = await fetch('/donor/', { redirect: 'manual' });
+                if (response.status === 0 || response.type === 'opaqueredirect') {
+                    addResult('User Session', 'error', 'Not logged in - redirected to login page');
+                } else if (response.status === 200) {
+                    addResult('User Session', 'success', 'Logged in successfully');
+                } else {
+                    addResult('User Session', 'error', `Unexpected status: ${response.status}`);
+                }
+            } catch (error) {
+                addResult('User Session', 'error', `Error: ${error.message}`);
+            }
+        }
+        
+        function testUserIdDetection() {
+            // Simulate the same detection logic
+            let userId = null;
+            let source = '';
+            
+            if (window.CURRENT_USER_ID && window.CURRENT_USER_ID !== 'null') {
+                userId = window.CURRENT_USER_ID;
+                source = 'window.CURRENT_USER_ID';
+            } else {
+                const userElements = document.querySelectorAll('[data-user]');
+                for (let element of userElements) {
+                    if (element.dataset.userId) {
+                        userId = element.dataset.userId;
+                        source = 'data-user-id attribute';
+                        break;
+                    }
+                }
+            }
+            
+            if (userId) {
+                addResult('User ID Detection', 'success', `Found user ID: ${userId}`, `Source: ${source}`);
+            } else {
+                addResult('User ID Detection', 'error', 'No user ID found', 
+                    `Checked: window.CURRENT_USER_ID = ${window.CURRENT_USER_ID}, data-user elements = ${document.querySelectorAll('[data-user]').length}`);
+            }
+        }
+        
+        async function testApiConnection() {
+            try {
+                const response = await fetch('/api/health/');
+                if (response.status === 200) {
+                    const data = await response.json();
+                    addResult('API Connection', 'success', 'API server is running', JSON.stringify(data, null, 2));
+                } else {
+                    addResult('API Connection', 'error', `API returned status ${response.status}`);
+                }
+            } catch (error) {
+                addResult('API Connection', 'error', `Cannot connect to API: ${error.message}`);
+            }
+        }
+        
+        async function testDonationLoad() {
+            // Simulate the getCurrentUserId function
+            function getCurrentUserId() {
+                if (window.CURRENT_USER_ID && window.CURRENT_USER_ID !== 'null') {
+                    return window.CURRENT_USER_ID;
+                }
+                const userElements = document.querySelectorAll('[data-user]');
+                for (let element of userElements) {
+                    if (element.dataset.userId) {
+                        return element.dataset.userId;
+                    }
+                }
+                return null;
+            }
+            
+            const userId = getCurrentUserId();
+            if (!userId) {
+                addResult('Donation Load', 'error', 'Cannot test - no user ID found');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/donors/${userId}/donations/`);
+                if (response.status === 200) {
+                    const donations = await response.json();
+                    addResult('Donation Load', 'success', `Loaded ${donations.length} donations`, 
+                        donations.length > 0 ? JSON.stringify(donations[0], null, 2) : 'No donations found');
+                } else {
+                    const errorText = await response.text();
+                    addResult('Donation Load', 'error', `API returned ${response.status}`, errorText);
+                }
+            } catch (error) {
+                addResult('Donation Load', 'error', `Network error: ${error.message}`);
+            }
+        }
+        
+        async function runAllTests() {
+            testResults = [];
+            updateDisplay();
+            
+            await checkUserSession();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testUserIdDetection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testApiConnection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testDonationLoad();
+        }
+        
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testUserIdDetection();
+                testApiConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
