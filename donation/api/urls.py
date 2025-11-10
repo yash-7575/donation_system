@@ -10,4 +10,6 @@ urlpatterns = [
     path('ngos/', views.ngos_list_create),
     path('donations/', views.donations_list_create),
     path('donations/match/', views.match_donation),
+    path('joins/donation-donor/', views.donation_donor_join),
+    path('joins/donation-recipient/', views.donation_recipient_join),
 ]

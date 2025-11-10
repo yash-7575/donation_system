@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Donor Dashboard — GiveHope{% endblock %}
 {% block content %}
-<div id="donor-scope" class="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-cyan-50 flex">
+<div id="donor-scope" class="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-cyan-50 flex" data-donor-id="{{ donor.id }}">
   <aside class="w-64 bg-white shadow-lg fixed h-full">
     <div class="p-6 border-b border-gray-200">
       <div class="flex items-center space-x-3 mb-4">
@@ -205,6 +205,10 @@
             <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
             <input name="quantity" type="number" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="1" min="1" required />
           </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Image URL (Optional)</label>
+          <input name="image_url" type="url" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" placeholder="https://example.com/image.jpg" />
         </div>
         <div class="flex justify-end gap-3 pt-2">
           <button class="px-6 py-3 rounded-lg border-2" type="button" data-close-modal>Cancel</button>

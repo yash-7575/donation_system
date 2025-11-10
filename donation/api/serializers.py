@@ -1,11 +1,13 @@
+# api/serializers.py
 from rest_framework import serializers
 from .models import Donor, Recipient, NGO, Donation, Feedback
 
 class DonorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Donor
-        fields = ['donor_id', 'name', 'email', 'phone', 'address', 'city', 'state', 'pincode']
-        read_only_fields = ['donor_id']
+        # Match your current Donor model exactly
+        fields = ['id', 'name', 'phone', 'address', 'city', 'state', 'pincode']
+        read_only_fields = ['id']
 
 class RecipientSerializer(serializers.ModelSerializer):
     class Meta:

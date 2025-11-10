@@ -117,7 +117,18 @@ document.addEventListener('DOMContentLoaded', function () {
       const payload = Object.fromEntries(formData.entries());
       
       try {
-        const res = await fetch('/donor/', {
+        // Get donor ID from the data attribute
+        const donorScope = document.getElementById('donor-scope');
+        const donorId = donorScope ? donorScope.getAttribute('data-donor-id') : null;
+        
+        if (!donorId) {
+          throw new Error('Donor ID not found');
+        }
+        
+        // Add donor ID to the payload
+        payload.donor = parseInt(donorId);
+        
+        const res = await fetch('/api/donations/', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

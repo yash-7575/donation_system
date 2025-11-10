@@ -1,13 +1,11 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'dev-secret-key'
 DEBUG = True
-ALLOWED_HOSTS: list[str] = ['*']
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -51,20 +49,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
-import os
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('MYSQL_DATABASE', 'givehope'),
-        'USER': os.environ.get('MYSQL_USER', 'root'),
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
-        'HOST': os.environ.get('MYSQL_HOST', 'localhost'),
-        'PORT': os.environ.get('MYSQL_PORT', '3306'),
+        'NAME': 'givehope',           # <-- put your DB name here
+        'USER': 'root',               # <-- your MySQL username
+        'PASSWORD': 'Vidya@123',      # <-- your MySQL password
+        'HOST': 'localhost',          # <-- usually localhost
+        'PORT': '3306',               # <-- default MySQL port
     }
 }
 
-AUTH_PASSWORD_VALIDATORS: list[dict] = []
+AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -76,5 +72,3 @@ STATICFILES_DIRS = [BASE_DIR / 'frontend' / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-

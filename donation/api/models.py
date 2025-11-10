@@ -1,10 +1,22 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import User
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ("donor", "Donor"),
+        ("ngo", "NGO"),
+        ("recipient", "Recipient"),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+
+    def __str__(self):
+        return f"{self.user} ({self.role})"
+
 
 class NGO(models.Model):
-    ngo_id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='ngo_profile', null=True, blank=True)
     ngo_name = models.CharField(max_length=200)
-    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
     website = models.URLField(blank=True)
     address = models.TextField(blank=True)
@@ -12,33 +24,24 @@ class NGO(models.Model):
     state = models.CharField(max_length=100)
     pincode = models.CharField(max_length=12)
 
-    def __str__(self) -> str:
-        return self.ngo_name
+    def __str__(self):
+        return str(self.ngo_name)
 
 class Donor(models.Model):
-    donor_id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='donor_profile', null=True, blank=True)
     name = models.CharField(max_length=150)
-    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     pincode = models.CharField(max_length=12, blank=True)
-    password = models.CharField(max_length=128)  # For storing hashed passwords
-    
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
 
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
-
-    def __str__(self) -> str:
-        return self.name
+    def __str__(self):
+        return str(self.name)
 
 class Recipient(models.Model):
-    recipient_id = models.AutoField(primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='recipient_profile', null=True, blank=True)
     name = models.CharField(max_length=150)
-    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True)
     family_size = models.IntegerField(default=1)
     urgency = models.CharField(max_length=20, default='medium', blank=True)
@@ -47,8 +50,8 @@ class Recipient(models.Model):
     state = models.CharField(max_length=100, blank=True)
     pincode = models.CharField(max_length=12, blank=True)
 
-    def __str__(self) -> str:
-        return self.name
+    def __str__(self):
+        return str(self.name)
 
 class Donation(models.Model):
     donation_id = models.AutoField(primary_key=True)

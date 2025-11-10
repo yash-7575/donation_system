@@ -32,35 +32,108 @@
         <p class="text-gray-600">Manage donations and see the impact you're making in Mumbai region</p>
       </div>
       
-      <!-- Simplified Stats Grid -->
+      <!-- Category Filter -->
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div class="flex flex-wrap items-center gap-4">
+          <h3 class="text-lg font-bold text-gray-900">Filter by Category:</h3>
+          <form method="GET" class="flex flex-wrap gap-2">
+            <select name="category" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">All Categories</option>
+              {% for category in available_categories %}
+                <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="px-4 py-2 rounded-lg gradient-secondary text-white">Apply Filter</button>
+            {% if selected_category %}
+              <a href="?" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700">Clear Filter</a>
+            {% endif %}
+          </form>
+        </div>
+        {% if selected_category %}
+          <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p class="text-blue-700">Showing results for category: <strong>{{ selected_category }}</strong></p>
+          </div>
+        {% endif %}
+      </div>
+      
+      <!-- Stats Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
           <div class="w-12 h-12 gradient-secondary rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span class="text-white font-bold">🎁</span>
+            <span class="text-white font-bold">👥</span>
           </div>
-          <div class="text-3xl font-bold text-gray-900">47</div>
-          <div class="text-gray-600">Total Donations Handled</div>
+          <div class="text-3xl font-bold text-gray-900">{{ stats.donor_count }}</div>
+          <div class="text-gray-600">Total Donors</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
           <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(45deg, #54a0ff, #5f27cd);">
-            <span class="text-white font-bold">✅</span>
+            <span class="text-white font-bold">🎯</span>
           </div>
-          <div class="text-3xl font-bold text-gray-900">32</div>
-          <div class="text-gray-600">Successfully Delivered</div>
+          <div class="text-3xl font-bold text-gray-900">{{ stats.recipient_count }}</div>
+          <div class="text-gray-600">Total Recipients</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
           <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(45deg, #00d2d3, #54a0ff);">
-            <span class="text-white font-bold">👥</span>
+            <span class="text-white font-bold">🎁</span>
           </div>
-          <div class="text-3xl font-bold text-gray-900">128</div>
-          <div class="text-gray-600">Families Helped</div>
+          <div class="text-3xl font-bold text-gray-900">{{ stats.donation_count }}</div>
+          <div class="text-gray-600">Total Donations</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
           <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(45deg, #ff9ff3, #f368e0);">
             <span class="text-white font-bold">⭐</span>
           </div>
-          <div class="text-3xl font-bold text-gray-900">4.8</div>
+          <div class="text-3xl font-bold text-gray-900">{{ stats.avg_rating }}/5</div>
           <div class="text-gray-600">Average Rating</div>
+        </div>
+      </div>
+      
+      <!-- Additional Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Donation Statistics</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Items Donated</span>
+              <span class="font-semibold">17</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Delivered Donations</span>
+              <span class="font-semibold text-green-600">{{ stats.delivered_count }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Pending Donations</span>
+              <span class="font-semibold text-yellow-600">{{ stats.donation_count|add:"-stats.delivered_count" }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Top Cities</h3>
+          <div class="space-y-3">
+            {% for city in stats.top_cities %}
+            <div class="flex justify-between">
+              <span class="text-gray-600">{{ city.city|default:"Unknown" }}</span>
+              <span class="font-semibold">{{ city.count }}</span>
+            </div>
+            {% empty %}
+            <div class="text-gray-500 text-center">No data available</div>
+            {% endfor %}
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Donations by Category</h3>
+          <div class="space-y-3">
+            {% for category in stats.donations_by_category %}
+            <div class="flex justify-between">
+              <span class="text-gray-600">{{ category.category }}</span>
+              <span class="font-semibold">{{ category.count }}</span>
+            </div>
+            {% empty %}
+            <div class="text-gray-500 text-center">No data available</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>
@@ -184,8 +257,12 @@
                 <tr>
                   <th class="py-2 px-4 text-left">Title</th>
                   <th class="py-2 px-4 text-left">Donor Name</th>
-                  <th class="py-2 px-4 text-left">City</th>
+                  <th class="py-2 px-4 text-left">Donation</th>
+                  <th class="py-2 px-4 text-left">Category</th>
+                  <th class="py-2 px-4 text-left">Quantity</th>
                   <th class="py-2 px-4 text-left">Status</th>
+                  <th class="py-2 px-4 text-left">Donor Email</th>
+                  <th class="py-2 px-4 text-left">Donor State</th>
                 </tr>
               </thead>
               <tbody id="results-body">
@@ -282,52 +359,61 @@
     joinResults.classList.add('hidden');
     
     let description = '';
-    let query = '';
+    let apiUrl = '';
     
     switch(joinType) {
       case 'inner':
         description = 'INNER JOIN combines records from two tables when there are matching values in both tables.';
-        query = `SELECT d.title, dn.name, dn.city, d.status\nFROM donations d\nINNER JOIN donors dn ON d.donor_id = dn.donor_id\nWHERE d.ngo_id = 1;`;
-        // Sample data for demonstration
-        const innerData = [
-          {title: 'Winter Coats', name: 'John Smith', city: 'Mumbai', status: 'Delivered'},
-          {title: 'Books Collection', name: 'Sarah Johnson', city: 'Pune', status: 'In Transit'},
-          {title: 'Kitchen Utensils', name: 'Rajesh Kumar', city: 'Mumbai', status: 'Pending'}
-        ];
-        populateResults(innerData);
+        apiUrl = '/api/joins/donation-donor/';
         break;
       case 'left':
         description = 'LEFT JOIN returns all records from the left table and matched records from the right table.';
-        query = `SELECT d.title, f.rating, f.comment\nFROM donations d\nLEFT JOIN feedback f ON d.donation_id = f.donation_id\nWHERE d.ngo_id = 1;`;
-        // Sample data for demonstration
-        const leftData = [
-          {title: 'School Supplies', rating: '5', comment: 'Excellent quality items'},
-          {title: 'Clothing Drive', rating: null, comment: null},
-          {title: 'Food Packets', rating: '4', comment: 'Good variety of food items'}
-        ];
-        populateResults(leftData);
+        apiUrl = '/api/joins/donation-recipient/';
         break;
       case 'self':
         description = 'SELF JOIN is used to join a table with itself to compare rows within the same table.';
-        query = `SELECT ngo1.name AS ngo_name, ngo2.name AS partner_name
-FROM ngos ngo1
-JOIN partnerships p ON ngo1.ngo_id = p.ngo_id
-JOIN ngos ngo2 ON p.partner_id = ngo2.ngo_id
-WHERE ngo1.ngo_id = 1;`;
-        // Sample data for demonstration
+        // Keep the sample data for self-join as it requires a partnerships table
         const selfData = [
           {ngo_name: 'Hope Foundation', partner_name: 'Helping Hands'},
           {ngo_name: 'Hope Foundation', partner_name: 'Community Care'},
           {ngo_name: 'Hope Foundation', partner_name: 'Urban Support Network'}
         ];
+        queryDescription.textContent = description;
+        queryContent.textContent = `SELECT ngo1.name AS ngo_name, ngo2.name AS partner_name
+FROM ngos ngo1
+JOIN partnerships p ON ngo1.ngo_id = p.ngo_id
+JOIN ngos ngo2 ON p.partner_id = ngo2.ngo_id
+WHERE ngo1.ngo_id = 1;`;
+        sqlQuery.classList.remove('hidden');
         populateResults(selfData);
-        break;
+        joinResults.classList.remove('hidden');
+        return;
     }
     
-    queryDescription.textContent = description;
-    queryContent.textContent = query;
-    sqlQuery.classList.remove('hidden');
-    joinResults.classList.remove('hidden');
+    // Fetch data from API for inner and left joins
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(data => {
+        queryDescription.textContent = description;
+        queryContent.textContent = data.query;
+        sqlQuery.classList.remove('hidden');
+        
+        if (data.results && data.results.length > 0) {
+          populateResults(data.results);
+          joinResults.classList.remove('hidden');
+        } else {
+          resultsBody.innerHTML = '<tr><td colspan="8" class="py-2 px-4 text-center text-gray-500">No results found</td></tr>';
+          joinResults.classList.remove('hidden');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching join data:', error);
+        queryDescription.textContent = 'Error loading join data';
+        queryContent.textContent = 'An error occurred while fetching the data.';
+        sqlQuery.classList.remove('hidden');
+        resultsBody.innerHTML = '<tr><td colspan="8" class="py-2 px-4 text-center text-red-500">Failed to load data</td></tr>';
+        joinResults.classList.remove('hidden');
+      });
   }
   
   // Function to populate results table
@@ -339,6 +425,7 @@ WHERE ngo1.ngo_id = 1;`;
       const tr = document.createElement('tr');
       tr.className = 'border-b';
       
+      // Create cells based on the data structure
       Object.values(row).forEach(value => {
         const td = document.createElement('td');
         td.className = 'py-2 px-4';
