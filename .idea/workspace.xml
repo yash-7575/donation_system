@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="5b463261-ca11-4e25-ad62-4dfe9ee66b1a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Acount.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assignment8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assignment8.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BankAcount.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CurrentAcount.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/SavingsAcount.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/donation/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/donation/api/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/donation/frontend/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/donation/frontend/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/donation/project/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/donation/project/settings.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
+  <component name="KubernetesApiProvider"><![CDATA[{
+  "isMigrated": true
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 4
+}]]></component>
+  <component name="ProjectId" id="35If3OiGlmUNl31rETfv6TMUDab" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "Final",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="5b463261-ca11-4e25-ad62-4dfe9ee66b1a" name="Changes" comment="" />
+      <created>1762802308216</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1762802308216</updated>
+      <workItem from="1762802331799" duration="41000" />
+    </task>
+    <servers />
+  </component>
+</project>

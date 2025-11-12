@@ -14,9 +14,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'api',
-    'frontend',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -34,7 +32,7 @@ ROOT_URLCONF = 'project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'frontend' / 'templates'],
+        'DIRS': [BASE_DIR / 'core' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -52,7 +50,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'givehope',           # <-- put your DB name here
+        'NAME': 'givehope_core',           # <-- put your DB name here
         'USER': 'root',               # <-- your MySQL username
         'PASSWORD': 'Vidya@123',      # <-- your MySQL password
         'HOST': 'localhost',          # <-- usually localhost
