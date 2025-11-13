@@ -13,6 +13,8 @@ urlpatterns = [
 
     # Dashboards
     path('donor/', views.donor_dashboard, name='donor'),
+    path('donor/update/<int:donation_id>/', views.update_donation, name='update_donation'),
+    path('donor/delete/<int:donation_id>/', views.delete_donation, name='delete_donation'),
     path('recipient/', views.recipient_dashboard, name='recipient'),
     path('ngo/', views.ngo_dashboard, name='ngo'),
     

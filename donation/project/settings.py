@@ -1,5 +1,9 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,14 +51,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
+# Using SQLite for development
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'givehope_core',           # <-- put your DB name here
-        'USER': 'root',               # <-- your MySQL username
-        'PASSWORD': 'Vidya@123',      # <-- your MySQL password
-        'HOST': 'localhost',          # <-- usually localhost
-        'PORT': '3306',               # <-- default MySQL port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

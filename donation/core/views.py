@@ -224,6 +224,93 @@ def donor_dashboard(request):
     }
     return render(request, 'donor_dashboard.html', context)
 
+def update_donation(request, donation_id):
+    # Must be logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # Must be donor
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'donor':
+            return redirect('home')
+    except UserProfile.DoesNotExist:
+        return redirect('login')
+
+    try:
+        donor = Donor.objects.get(user=request.user)
+        donation = Donation.objects.get(donation_id=donation_id, donor=donor)
+    except (Donor.DoesNotExist, Donation.DoesNotExist):
+        messages.error(request, 'Donation not found')
+        return redirect('donor')
+
+    # Handle update submission
+    if request.method == 'POST':
+        try:
+            donation.title = request.POST.get('title')
+            donation.description = request.POST.get('description', '')
+            donation.category = request.POST.get('category')
+            donation.quantity = int(request.POST.get('quantity', 1))
+            donation.image_url = request.POST.get('image_url', '')
+            donation.save()
+            messages.success(request, 'Donation updated successfully!')
+        except Exception as e:
+            logger.error(f'Error updating donation: {e}')
+            messages.error(request, 'Failed to update donation')
+        
+        return redirect('donor')
+    else:
+        # For GET request, return donation data as JSON for the modal
+        donation_data = {
+            'donation_id': donation.donation_id,
+            'title': donation.title,
+            'description': donation.description,
+            'category': donation.category,
+            'quantity': donation.quantity,
+            'image_url': donation.image_url
+        }
+        return JsonResponse(donation_data)
+
+def delete_donation(request, donation_id):
+    # Must be logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # Must be donor
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'donor':
+            return redirect('home')
+    except UserProfile.DoesNotExist:
+        return redirect('login')
+
+    try:
+        donor = Donor.objects.get(user=request.user)
+        donation = Donation.objects.get(donation_id=donation_id, donor=donor)
+    except (Donor.DoesNotExist, Donation.DoesNotExist):
+        messages.error(request, 'Donation not found')
+        return redirect('donor')
+
+    # Handle delete
+    if request.method == 'POST':
+        try:
+            donation.delete()
+            messages.success(request, 'Donation deleted successfully!')
+        except Exception as e:
+            logger.error(f'Error deleting donation: {e}')
+            messages.error(request, 'Failed to delete donation')
+        
+        return redirect('donor')
+    else:
+        # For GET request, return donation data for confirmation
+        donation_data = {
+            'donation_id': donation.donation_id,
+            'title': donation.title,
+            'category': donation.category,
+            'quantity': donation.quantity
+        }
+        return JsonResponse(donation_data)
+
 # ---------------- RECIPIENT DASHBOARD ----------------
 def recipient_dashboard(request):
     # Ensure logged in
@@ -324,6 +411,7 @@ def ngo_dashboard(request):
     }
 
     return render(request, 'ngo_dashboard.html', context)
+    
 # ---------------- API ENDPOINTS FOR NGO DASHBOARD ----------------
 def donors_api(request):
     """
