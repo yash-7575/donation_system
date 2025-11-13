@@ -3,11 +3,11 @@ from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Count, Avg, Sum
+from django.db.models import Count, Avg, Sum, Q
 from django.utils import timezone
 import logging
 
-from .models import UserProfile, Donor, NGO, Recipient, Donation, Feedback, Request, Match
+from .models import UserProfile, Donor, NGO, Recipient, Donation, Feedback, Request
 from .forms import SignupStep1Form, DonorProfileForm, NGOProfileForm, RecipientProfileForm
 
 logger = logging.getLogger(__name__)
@@ -15,8 +15,30 @@ logger = logging.getLogger(__name__)
 
 # ---------------- HOME ----------------
 def home(request):
-    return render(request, "home.html")
-
+    # Calculate live statistics for the homepage
+    try:
+        # Sums the quantity of all donations. If no donations, defaults to 0.
+        items_donated = Donation.objects.aggregate(total=Sum('quantity'))['total'] or 0
+        families_helped = Recipient.objects.count()
+        total_ngos = NGO.objects.count()
+        active_donors = Donor.objects.count()
+    except Exception as e:
+        # In case of a database error, default all stats to 0
+        logger.error(f"Error fetching homepage stats: {e}")
+        items_donated = 0
+        families_helped = 0
+        total_ngos = 0
+        active_donors = 0
+        
+    context = {
+        'home_stats': {
+            'items_donated': items_donated,
+            'families_helped': families_helped,
+            'total_ngos': total_ngos,
+            'active_donors': active_donors,
+        }
+    }
+    return render(request, "home.html", context)
 
 # ---------------- LOGIN ----------------
 def login_page(request):
@@ -166,7 +188,6 @@ def signup_success(request):
 
 
 # ---------------- DONOR DASHBOARD ----------------
-# ---------------- DONOR DASHBOARD ----------------
 def donor_dashboard(request):
     # Must be logged in
     if not request.user.is_authenticated:
@@ -186,7 +207,7 @@ def donor_dashboard(request):
         messages.error(request, 'Donor profile not found')
         return redirect('home')
 
-    # ✅ Handle new donation submission
+    # Handle new donation submission
     if request.method == 'POST':
         try:
             Donation.objects.create(
@@ -203,16 +224,16 @@ def donor_dashboard(request):
             logger.error(f'Error creating donation: {e}')
             messages.error(request, 'Failed to submit donation')
         
-        return redirect('donor')  # Refresh page
+        return redirect('donor')
 
-    # ✅ Get donor's past donations
+    # Get donor's past donations
     donations = Donation.objects.filter(donor=donor).order_by('-created_at')
 
-    # ✅ Calculate dashboard stats
+    # Calculate dashboard stats
     total_donations = donations.count()
     delivered_donations = donations.filter(status='delivered').count()
-    impact_score = delivered_donations * 10  # Example formula
-    thank_you_notes = 0  # You will implement later
+    impact_score = delivered_donations * 10
+    thank_you_notes = 0
 
     context = {
         'donor': donor,
@@ -223,6 +244,7 @@ def donor_dashboard(request):
         'thank_you_notes': thank_you_notes,
     }
     return render(request, 'donor_dashboard.html', context)
+
 
 # ---------------- RECIPIENT DASHBOARD ----------------
 def recipient_dashboard(request):
@@ -243,7 +265,7 @@ def recipient_dashboard(request):
             urgency=request.POST.get('urgency'),
             status="pending"
         )
-        return redirect('recipient')  # Refresh page after submit
+        return redirect('recipient')
 
     # Get recipient requests
     requests_list = Request.objects.filter(recipient=recipient).order_by('-created_at')
@@ -261,69 +283,141 @@ def recipient_dashboard(request):
 
 # ---------------- NGO DASHBOARD ----------------
 def ngo_dashboard(request):
-    # Example NGO (temporary until authentication)
-    ngo = NGO.objects.first()
+    # Ensure logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
 
-    # Category filter from GET
-    selected_category = request.GET.get('category')
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
 
-    # Get all unique donation categories
-    available_categories = Donation.objects.values_list('category', flat=True).distinct()
+    # Get filter parameters
+    selected_category = request.GET.get('category', '')
+    search_query = request.GET.get('search', '')
 
-    # Filter donations by selected category (if provided)
-    donations = Donation.objects.all()
-    if selected_category:
-        donations = donations.filter(category=selected_category)
-
-    # ----- Dashboard Statistics -----
-    donor_count = Donor.objects.count()
-    recipient_count = Recipient.objects.count()
-    donation_count = donations.count()
-    delivered_count = donations.filter(status='delivered').count()
-
-    # Donations by category (use correct PK field)
-    donations_by_category = donations.values('category').annotate(
-        count=Count('donation_id')
-    ).filter(count__gt=0).order_by('-count')
-
-    # Top cities by donation count (from Donors)
-    top_cities = Donor.objects.values('city').annotate(
-        count=Count('city')
-    ).filter(count__gt=0).order_by('-count')[:5]
-
-    # Average rating (handle no feedback gracefully)
+    # ----- DASHBOARD STATISTICS -----
+    
+    # Total counts
+    total_donations = Donation.objects.count()
+    pending_requests = Request.objects.filter(status='pending').count()
+    accepted_donations = Donation.objects.filter(status='accepted').count()
+    delivered_donations = Donation.objects.filter(status='delivered').count()
+    fulfilled_requests = Request.objects.filter(status='fulfilled').count()
+    
+    # Average rating
     avg_rating = Feedback.objects.aggregate(Avg('rating'))['rating__avg']
     avg_rating = round(avg_rating, 1) if avg_rating else 0
+    
+    # Active donors (donors who have made at least one donation)
+    active_donors = Donor.objects.filter(donation__isnull=False).distinct().count()
 
     stats = {
-        'donor_count': donor_count,
-        'recipient_count': recipient_count,
-        'donation_count': donation_count,
-        'delivered_count': delivered_count,
+        'total_donations': total_donations,
+        'pending_requests': pending_requests,
+        'accepted_donations': accepted_donations,
+        'delivered_donations': delivered_donations,
+        'fulfilled_requests': fulfilled_requests,
         'avg_rating': avg_rating,
-        'top_cities': top_cities,
-        'donations_by_category': donations_by_category,
+        'active_donors': active_donors,
     }
 
-    # ----- Table Data -----
-    donors = Donor.objects.select_related('user').all()
-    recipients = Recipient.objects.select_related('user').all()
+    # ----- DONATIONS DATA -----
+    donations = Donation.objects.select_related('donor').all()
+    
+    # Apply category filter
+    if selected_category:
+        donations = donations.filter(category=selected_category)
+    
+    # Apply search filter
+    if search_query:
+        donations = donations.filter(
+            Q(title__icontains=search_query) |
+            Q(donor__name__icontains=search_query) |
+            Q(donor__city__icontains=search_query)
+        )
+    
+    donations = donations.order_by('-created_at')
+    
+    # Get all unique categories for filter dropdown
+    available_categories = Donation.objects.values_list('category', flat=True).distinct().order_by('category')
 
-    # ✅ Fetch all matches (join with Donation, Request, NGO)
-    matches = Match.objects.select_related('donation', 'request', 'ngo').all()
+    # ----- REQUESTS DATA -----
+    requests = Request.objects.select_related('recipient').order_by('-created_at')
 
-    # ----- Context -----
+
+
+    # ----- ANALYTICS DATA -----
+    
+    # Donations by category
+    donations_by_category = Donation.objects.values('category').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    # Top 5 donor cities
+    top_cities = Donation.objects.values('donor__city').annotate(
+        count=Count('id')
+    ).filter(donor__city__isnull=False).exclude(donor__city='').order_by('-count')[:5]
+
+    # Format top cities data
+    top_cities_formatted = []
+    for city_data in top_cities:
+        if city_data['donor__city']:
+            top_cities_formatted.append({
+                'city': city_data['donor__city'],
+                'count': city_data['count']
+            })
+
+    # Request urgency distribution
+    urgency_distribution = Request.objects.values('urgency').annotate(
+        count=Count('id')
+    ).order_by('urgency')
+
+    # Monthly donation trend (last 6 months)
+    from django.db.models.functions import TruncMonth
+    from datetime import timedelta
+    
+    six_months_ago = timezone.now() - timedelta(days=180)
+    monthly_donations = Donation.objects.filter(
+        created_at__gte=six_months_ago
+    ).annotate(
+        month=TruncMonth('created_at')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+
+    monthly_requests = Request.objects.filter(
+        created_at__gte=six_months_ago
+    ).annotate(
+        month=TruncMonth('created_at')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+
+    # ----- CONTEXT -----
     context = {
         'ngo': ngo,
         'stats': stats,
+        'donations': donations,
+        'requests': requests,
         'available_categories': available_categories,
         'selected_category': selected_category,
-        'donors': donors,
-        'recipients': recipients,
-        'matches': matches,
+        'search_query': search_query,
+        'donations_by_category': donations_by_category,
+        'top_cities': top_cities_formatted,
+        'urgency_distribution': urgency_distribution,
+        'monthly_donations': monthly_donations,
+        'monthly_requests': monthly_requests,
     }
 
     return render(request, 'ngo_dashboard.html', context)
+
+
 # ---------------- API ENDPOINTS FOR NGO DASHBOARD ----------------
 def donors_api(request):
     """
@@ -335,7 +429,7 @@ def donors_api(request):
     for donor in donors:
         donors_data.append({
             'name': donor.name,
-            'email': donor.user.email,
+            'email': donor.user.email if donor.user else '',
             'phone': donor.phone,
             'city': donor.city,
             'state': donor.state,
@@ -354,7 +448,7 @@ def recipients_api(request):
     for recipient in recipients:
         recipients_data.append({
             'name': recipient.name,
-            'email': recipient.user.email,
+            'email': recipient.user.email if recipient.user else '',
             'phone': recipient.phone,
             'family_size': recipient.family_size,
             'city': recipient.city,
@@ -363,3 +457,478 @@ def recipients_api(request):
     
     return JsonResponse(recipients_data, safe=False)
 
+
+# ---------------- API ENDPOINTS FOR DBMS DEMO ----------------
+def dbms_demo_inner_join(request):
+    """
+    API endpoint to demonstrate INNER JOIN between donations and donors
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the join query
+        donations_with_donors = Donation.objects.select_related('donor').filter(
+            donor__isnull=False
+        ).values(
+            'title', 'category', 'status', 'donor__name'
+        )
+        
+        # Format the results
+        results = []
+        for item in donations_with_donors:
+            results.append([
+                item['title'] if item['title'] else 'N/A',
+                item['category'] if item['category'] else 'N/A',
+                item['donor__name'] if item['donor__name'] else 'N/A',
+                item['status'] if item['status'] else 'N/A'
+            ])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No data available', 'N/A', 'N/A', 'N/A']]
+    except Exception as e:
+        results = [['Error loading data', str(e), '', '']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT D.title, D.category, DO.name AS donor_name, D.status
+FROM donations AS D
+INNER JOIN donors AS DO ON D.donor_id = DO.id;"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Donation Title', 'Category', 'Donor Name', 'Status'],
+        'results': results
+    })
+
+
+def dbms_demo_left_join(request):
+    """
+    API endpoint to demonstrate LEFT JOIN between requests and recipients
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the join query
+        requests_with_recipients = Request.objects.select_related('recipient').values(
+            'title', 'status', 'recipient__name', 'recipient__city'
+        )
+        
+        # Format the results
+        results = []
+        for item in requests_with_recipients:
+            recipient_name = item['recipient__name'] if item['recipient__name'] else 'NULL'
+            recipient_city = item['recipient__city'] if item['recipient__city'] else 'NULL'
+            results.append([
+                item['title'] if item['title'] else 'N/A',
+                recipient_name,
+                item['status'] if item['status'] else 'N/A',
+                recipient_city
+            ])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No data available', 'NULL', 'N/A', 'NULL']]
+    except Exception as e:
+        results = [['Error loading data', 'NULL', str(e), 'NULL']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT R.title, RE.name AS recipient_name, R.status, RE.city
+FROM requests AS R
+LEFT JOIN recipients AS RE ON R.recipient_id = RE.id;"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Request Title', 'Recipient Name', 'Status', 'City'],
+        'results': results
+    })
+
+
+def dbms_demo_right_join(request):
+    """
+    API endpoint to demonstrate RIGHT JOIN between donors and donations
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the join query
+        donors_with_donations = Donor.objects.prefetch_related('donation_set').all()
+        
+        # Format the results
+        results = []
+        for donor in donors_with_donations:
+            donations = donor.donation_set.all()
+            if donations.exists():
+                for donation in donations:
+                    results.append([
+                        donor.name if donor.name else 'N/A',
+                        donor.city if donor.city else 'N/A',
+                        donation.title if donation.title else 'N/A',
+                        donation.status if donation.status else 'N/A'
+                    ])
+            else:
+                results.append([
+                    donor.name if donor.name else 'N/A',
+                    donor.city if donor.city else 'N/A',
+                    'NULL',
+                    'NULL'
+                ])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No data available', 'N/A', 'NULL', 'NULL']]
+    except Exception as e:
+        results = [['Error loading data', str(e), 'NULL', 'NULL']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT DO.name AS donor_name, DO.city, D.title AS donation_title, D.status
+FROM donors AS DO
+RIGHT JOIN donations AS D ON DO.id = D.donor_id;"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Donor Name', 'City', 'Donation Title', 'Status'],
+        'results': results
+    })
+
+
+def dbms_demo_self_join(request):
+    """
+    API endpoint to demonstrate SELF JOIN between recipients
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the self join query using raw SQL since Django ORM doesn't directly support self joins
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT A.name, B.name, A.city
+                FROM recipients A, recipients B
+                WHERE A.id <> B.id AND A.city = B.city
+                LIMIT 10
+            """)
+            rows = cursor.fetchall()
+        
+        # Format the results
+        results = []
+        for row in rows:
+            results.append([row[0] if row[0] else 'N/A', row[1] if row[1] else 'N/A', row[2] if row[2] else 'N/A'])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No matching recipients', 'N/A', 'N/A']]
+    except Exception as e:
+        results = [['Error loading data', str(e), 'N/A']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT A.name, B.name, A.city
+FROM recipients A, recipients B
+WHERE A.id <> B.id AND A.city = B.city;"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Recipient Name', 'Other Recipient', 'City'],
+        'results': results
+    })
+
+
+def dbms_demo_complex_join(request):
+    """
+    API endpoint to demonstrate COMPLEX JOIN between donations, donors, and NGOs
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the join query
+        donations_with_donors_ngos = Donation.objects.select_related(
+            'donor', 'ngo'
+        ).filter(
+            status='accepted'
+        ).values(
+            'title', 'category', 'status', 'donor__name', 'ngo__ngo_name'
+        )
+        
+        # Format the results
+        results = []
+        for item in donations_with_donors_ngos:
+            ngo_name = item['ngo__ngo_name'] if item['ngo__ngo_name'] else 'NULL'
+            results.append([
+                item['title'] if item['title'] else 'N/A',
+                item['donor__name'] if item['donor__name'] else 'N/A',
+                ngo_name,
+                item['category'] if item['category'] else 'N/A',
+                item['status'] if item['status'] else 'N/A'
+            ])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No accepted donations', 'N/A', 'NULL', 'N/A', 'accepted']]
+    except Exception as e:
+        results = [['Error loading data', str(e), 'NULL', 'N/A', 'N/A']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT D.title, DO.name AS donor_name, N.ngo_name, D.category, D.status
+FROM donations AS D
+INNER JOIN donors AS DO ON D.donor_id = DO.id
+INNER JOIN ngos AS N ON D.ngo_id = N.id
+WHERE D.status = 'accepted';"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Donation Title', 'Donor Name', 'NGO Name', 'Category', 'Status'],
+        'results': results
+    })
+
+
+def dbms_demo_full_join(request):
+    """
+    API endpoint to demonstrate FULL JOIN between donations, donors, and NGOs
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the join query
+        donations_with_all = Donation.objects.select_related(
+            'donor', 'ngo'
+        ).values(
+            'title', 'category', 'status', 'donor__name', 'ngo__ngo_name'
+        ).order_by('-created_at')
+        
+        # Format the results
+        results = []
+        for item in donations_with_all:
+            donor_name = item['donor__name'] if item['donor__name'] else 'NULL'
+            ngo_name = item['ngo__ngo_name'] if item['ngo__ngo_name'] else 'NULL'
+            results.append([
+                item['title'] if item['title'] else 'N/A',
+                donor_name,
+                ngo_name,
+                item['status'] if item['status'] else 'N/A',
+                item['category'] if item['category'] else 'N/A'
+            ])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No donations', 'NULL', 'NULL', 'N/A', 'N/A']]
+    except Exception as e:
+        results = [['Error loading data', 'NULL', 'NULL', str(e), 'N/A']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT D.title AS donation_title, DO.name AS donor_name, N.ngo_name, D.status, D.category
+FROM donations AS D
+LEFT JOIN donors AS DO ON D.donor_id = DO.id
+LEFT JOIN ngos AS N ON D.ngo_id = N.id
+ORDER BY D.created_at DESC;"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Donation Title', 'Donor Name', 'NGO Name', 'Status', 'Category'],
+        'results': results
+    })
+
+
+def dbms_demo_request_full_join(request):
+    """
+    API endpoint to demonstrate COMPLETE REQUEST JOIN with recipient details
+    Returns both the query results and the SQL query string
+    """
+    try:
+        # Execute the join query
+        requests_with_recipients = Request.objects.select_related(
+            'recipient'
+        ).values(
+            'title', 'status', 'category', 'urgency', 
+            'recipient__name', 'recipient__family_size'
+        ).order_by('-created_at')
+        
+        # Format the results
+        results = []
+        for item in requests_with_recipients:
+            recipient_name = item['recipient__name'] if item['recipient__name'] else 'NULL'
+            family_size = item['recipient__family_size'] if item['recipient__family_size'] else 'NULL'
+            results.append([
+                item['title'] if item['title'] else 'N/A',
+                recipient_name,
+                family_size,
+                item['urgency'] if item['urgency'] else 'N/A',
+                item['category'] if item['category'] else 'N/A',
+                item['status'] if item['status'] else 'N/A'
+            ])
+        
+        # Handle case when no data is available
+        if not results:
+            results = [['No requests', 'NULL', 'NULL', 'N/A', 'N/A', 'N/A']]
+    except Exception as e:
+        results = [['Error loading data', 'NULL', 'NULL', str(e), 'N/A', 'N/A']]
+    
+    # SQL query string for educational purposes
+    sql_query = """SELECT R.title AS request_title, RE.name AS recipient_name, RE.family_size, 
+       R.urgency, R.category, R.status
+FROM requests AS R
+INNER JOIN recipients AS RE ON R.recipient_id = RE.id
+ORDER BY R.created_at DESC;"""
+    
+    return JsonResponse({
+        'query': sql_query,
+        'headers': ['Request Title', 'Recipient Name', 'Family Size', 'Urgency', 'Category', 'Status'],
+        'results': results
+    })
+
+
+# ---------------- NGO ACTION ENDPOINTS ----------------
+def accept_donation(request, donation_id):
+    """Accept a pending donation"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Get the donation and update its status
+    try:
+        donation = Donation.objects.get(id=donation_id, status='pending')
+        donation.status = 'accepted'
+        donation.ngo = ngo  # Assign the NGO that accepted the donation
+        donation.save()
+        messages.success(request, 'Donation accepted successfully!')
+    except Donation.DoesNotExist:
+        messages.error(request, 'Donation not found or already processed.')
+    
+    return redirect('ngo')
+
+
+def decline_donation(request, donation_id):
+    """Decline a pending donation"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Get the donation and update its status
+    try:
+        donation = Donation.objects.get(id=donation_id, status='pending')
+        donation.status = 'cancelled'
+        donation.ngo = ngo  # Assign the NGO that declined the donation
+        donation.save()
+        messages.success(request, 'Donation declined successfully!')
+    except Donation.DoesNotExist:
+        messages.error(request, 'Donation not found or already processed.')
+    
+    return redirect('ngo')
+
+
+def accept_request(request, request_id):
+    """Accept a pending request"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Get the request and update its status
+    try:
+        recipient_request = Request.objects.get(id=request_id, status='pending')
+        recipient_request.status = 'accepted'
+        recipient_request.save()
+        messages.success(request, 'Request accepted successfully!')
+    except Request.DoesNotExist:
+        messages.error(request, 'Request not found or already processed.')
+    
+    return redirect('ngo')
+
+
+def decline_request(request, request_id):
+    """Decline a pending request"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Get the request and update its status
+    try:
+        recipient_request = Request.objects.get(id=request_id, status='pending')
+        recipient_request.status = 'cancelled'
+        recipient_request.save()
+        messages.success(request, 'Request declined successfully!')
+    except Request.DoesNotExist:
+        messages.error(request, 'Request not found or already processed.')
+    
+    return redirect('ngo')
+
+
+def mark_delivered(request, donation_id):
+    """Mark an accepted donation as delivered"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Get the donation and update its status
+    try:
+        donation = Donation.objects.get(id=donation_id, status='accepted')
+        donation.status = 'delivered'
+        donation.save()
+        messages.success(request, 'Donation marked as delivered!')
+    except Donation.DoesNotExist:
+        messages.error(request, 'Donation not found or not in accepted status.')
+    
+    return redirect('ngo')
+
+
+def mark_fulfilled(request, request_id):
+    """Mark an accepted request as fulfilled"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Get the request and update its status
+    try:
+        recipient_request = Request.objects.get(id=request_id, status='accepted')
+        recipient_request.status = 'fulfilled'
+        recipient_request.save()
+        messages.success(request, 'Request marked as fulfilled!')
+    except Request.DoesNotExist:
+        messages.error(request, 'Request not found or not in accepted status.')
+    
+    return redirect('ngo')

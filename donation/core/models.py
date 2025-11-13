@@ -2,6 +2,10 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+
+# -----------------------------
+# UserProfile Model
+# -----------------------------
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ("donor", "Donor"),
@@ -15,6 +19,9 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.role})"
 
 
+# -----------------------------
+# NGO Model
+# -----------------------------
 class NGO(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='ngo_profile', null=True, blank=True)
     ngo_name = models.CharField(max_length=200)
@@ -29,6 +36,9 @@ class NGO(models.Model):
         return self.ngo_name
 
 
+# -----------------------------
+# Donor Model
+# -----------------------------
 class Donor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='donor_profile', null=True, blank=True)
     name = models.CharField(max_length=150)
@@ -42,6 +52,9 @@ class Donor(models.Model):
         return self.name
 
 
+# -----------------------------
+# Recipient Model
+# -----------------------------
 class Recipient(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='recipient_profile', null=True, blank=True)
     name = models.CharField(max_length=150)
@@ -57,59 +70,70 @@ class Recipient(models.Model):
         return self.name
 
 
+# -----------------------------
+# Donation Model
+# -----------------------------
 class Donation(models.Model):
-    donation_id = models.AutoField(primary_key=True)
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('cancelled', 'Cancelled'),
+    ]
+
     donor = models.ForeignKey(Donor, on_delete=models.CASCADE)
-    ngo = models.ForeignKey(NGO, null=True, blank=True, on_delete=models.SET_NULL)
-    title = models.CharField(max_length=200)
+    ngo = models.ForeignKey(NGO, on_delete=models.SET_NULL, null=True, blank=True)
+    title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    category = models.CharField(max_length=50)
-    quantity = models.IntegerField(default=1)
-    status = models.CharField(max_length=30, default='pending')
-    image_url = models.URLField(blank=True)
+    category = models.CharField(max_length=100)
+    quantity = models.PositiveIntegerField(default=1)
+    image_url = models.URLField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.title} - {self.status}"
 
+
+# -----------------------------
+# Request Model
+# -----------------------------
+class Request(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    URGENCY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+
+    recipient = models.ForeignKey(Recipient, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=100)
+    urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.status}"
+
+
+# -----------------------------
+# Feedback Model
+# -----------------------------
 class Feedback(models.Model):
+    # Removed match_id (since we deleted Match model)
     feedback_id = models.AutoField(primary_key=True)
-    user_id = models.IntegerField()
-    match_id = models.IntegerField(null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    donation = models.ForeignKey(Donation, on_delete=models.SET_NULL, null=True, blank=True)
     rating = models.IntegerField()
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-class Request(models.Model):
-    recipient = models.ForeignKey(Recipient, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    category = models.CharField(max_length=50)
-    urgency = models.CharField(max_length=20, choices=[
-        ("low", "Low"),
-        ("medium", "Medium"),
-        ("high", "High"),
-    ], default="medium")
-    status = models.CharField(max_length=20, default="open")  # open, matched, fulfilled
-    created_at = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
-        return f"{self.title} ({self.recipient.name})"
-
-class Match(models.Model):
-    donation = models.ForeignKey('Donation', on_delete=models.CASCADE, related_name='matches')
-    request = models.ForeignKey('Request', on_delete=models.CASCADE, related_name='matches')
-    ngo = models.ForeignKey('NGO', on_delete=models.CASCADE, related_name='matches')
-
-    status_choices = [
-        ('matched', 'Matched'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
-    ]
-    status = models.CharField(max_length=20, choices=status_choices, default='matched')
-
-    matched_at = models.DateTimeField(default=timezone.now)
-    delivered_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.donation.title} → {self.request.title} ({self.status})"
-    
-    
+        return f"Feedback ({self.rating}/5)"

@@ -44,31 +44,35 @@
         </div>
       </div>
 
+<!-- ... inside the <section> for the hero area ... -->
+
+      <!-- Replace this entire grid with the one below -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 animate-fade-in">
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
-          <div class="w-12 h-12 mx-auto mb-3 text-orange-600">🎁</div>
-          <div class="text-3xl font-bold text-gray-900 mb-1">1,200</div>
+          <div class="w-12 h-12 mx-auto mb-3 text-orange-600 text-4xl">🎁</div>
+          <div class="text-3xl font-bold text-gray-900 mb-1">{{ home_stats.items_donated|default:"0" }}</div>
           <div class="text-gray-600">Items Donated</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
-          <div class="w-12 h-12 mx-auto mb-3 text-purple-600">👪</div>
-          <div class="text-3xl font-bold text-gray-900 mb-1">3,400</div>
+          <div class="w-12 h-12 mx-auto mb-3 text-purple-600 text-4xl">👪</div>
+          <div class="text-3xl font-bold text-gray-900 mb-1">{{ home_stats.families_helped|default:"0" }}</div>
           <div class="text-gray-600">Families Helped</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
-          <div class="w-12 h-12 mx-auto mb-3 text-cyan-600">📈</div>
-          <div class="text-3xl font-bold text-gray-900 mb-1">980</div>
-          <div class="text-gray-600">Successful Matches</div>
+          <div class="w-12 h-12 mx-auto mb-3 text-cyan-600 text-4xl">🏢</div> <!-- Changed icon -->
+          <div class="text-3xl font-bold text-gray-900 mb-1">{{ home_stats.total_ngos|default:"0" }}</div>
+          <div class="text-gray-600">Partner NGOs</div> <!-- Changed text -->
         </div>
         <div class="bg-white rounded-xl shadow-md p-6 text-center">
-          <div class="w-12 h-12 mx-auto mb-3 text-rose-600">❤️</div>
-          <div class="text-3xl font-bold text-gray-900 mb-1">5,600</div>
+          <div class="w-12 h-12 mx-auto mb-3 text-rose-600 text-4xl">❤️</div>
+          <div class="text-3xl font-bold text-gray-900 mb-1">{{ home_stats.active_donors|default:"0" }}</div>
           <div class="text-gray-600">Active Donors</div>
         </div>
       </div>
+
     </div>
   </section>
-
+  <!-- ... rest of your home.html file -->
   <section id="how-it-works" class="py-24 bg-white">
     <div class="container mx-auto px-6">
       <div class="text-center mb-16 animate-fade-in-up">

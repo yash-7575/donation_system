@@ -81,7 +81,7 @@
           </div>
           <span class="px-3 py-1 rounded-lg text-sm
             {% if d.status == 'pending' %} bg-yellow-100 text-yellow-700 {% endif %}
-            {% if d.status == 'matched' %} bg-blue-100 text-blue-700 {% endif %}
+            {% if d.status == 'accepted' %} bg-blue-100 text-blue-700 {% endif %}
             {% if d.status == 'delivered' %} bg-green-100 text-green-700 {% endif %}
           ">{{ d.status|capfirst }}</span>
         </div>
