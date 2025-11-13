@@ -42,19 +42,19 @@
       <p class="text-gray-600 mb-8">Track your donations and see the impact you're making ❤️</p>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="total-donations">{{ donor.total_donations|default:0 }}</div>
+          <div class="text-3xl font-bold text-gray-900" id="total-donations">{{ total_donations }}</div>
           <div class="text-sm text-gray-600">Total Donations</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="delivered-donations">{{ donor.delivered_donations|default:0 }}</div>
+          <div class="text-3xl font-bold text-gray-900" id="delivered-donations">{{ delivered_donations }}</div>
           <div class="text-sm text-gray-600">Items Delivered</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="impact-score">{{ donor.impact_score|default:0 }}</div>
+          <div class="text-3xl font-bold text-gray-900" id="impact-score">{{ impact_score }}</div>
           <div class="text-sm text-gray-600">Impact Score</div>
         </div>
         <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-3xl font-bold text-gray-900" id="thank-you-notes">{{ donor.thank_you_notes|default:0 }}</div>
+          <div class="text-3xl font-bold text-gray-900" id="thank-you-notes">{{ thank_you_notes }}</div>
           <div class="text-sm text-gray-600">Thank You Notes</div>
         </div>
       </div>

@@ -208,11 +208,28 @@ def donor_dashboard(request):
     # ✅ Get donor's past donations
     donations = Donation.objects.filter(donor=donor).order_by('-created_at')
 
-    # ✅ Calculate dashboard stats
+    # ✅ Calculate dashboard stats using aggregate functions
+    from django.db.models import Count, Sum
+    
+    # Total donations count
     total_donations = donations.count()
+    
+    # Delivered donations count
     delivered_donations = donations.filter(status='delivered').count()
-    impact_score = delivered_donations * 10  # Example formula
-    thank_you_notes = 0  # You will implement later
+    
+    # Calculate total items delivered (sum of quantities)
+    total_items_delivered = donations.filter(status='delivered').aggregate(
+        total_quantity=Sum('quantity')
+    )['total_quantity'] or 0
+    
+    # Impact score calculation (using total items delivered)
+    impact_score = total_items_delivered * 10
+    
+    # Thank you notes (assuming these come from feedback related to this donor's delivered donations)
+    # For now, we'll count feedback entries related to matches of this donor's delivered donations
+    from .models import Match, Feedback
+    donor_matches = Match.objects.filter(donation__donor=donor, donation__status='delivered')
+    thank_you_notes = Feedback.objects.filter(match_id__in=donor_matches.values_list('id', flat=True)).count()
 
     context = {
         'donor': donor,
