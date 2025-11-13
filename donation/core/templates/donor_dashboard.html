@@ -71,6 +71,41 @@
         <h1 class="text-3xl font-bold text-gray-900">My Donations</h1>
         <a href="#" data-open-modal="donation" class="px-6 py-3 rounded-lg gradient-primary text-white">New Donation</a>
       </div>
+      
+      <!-- Filter Section -->
+      <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div class="flex flex-wrap items-center gap-4">
+          <h3 class="text-lg font-bold text-gray-900">Filter Donations:</h3>
+          <form method="GET" class="flex flex-wrap gap-2">
+            <select name="category" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">All Categories</option>
+              {% for category in available_categories %}
+                <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+              {% endfor %}
+            </select>
+            <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">All Statuses</option>
+              {% for status in available_statuses %}
+                <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status|capfirst }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="px-4 py-2 rounded-lg gradient-primary text-white">Apply Filter</button>
+            {% if selected_category or selected_status %}
+              <a href="{% url 'donor' %}" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700">Clear Filters</a>
+            {% endif %}
+          </form>
+        </div>
+        {% if selected_category or selected_status %}
+          <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p class="text-blue-700">
+              {% if selected_category %}Category: <strong>{{ selected_category }}</strong>{% endif %}
+              {% if selected_category and selected_status %} | {% endif %}
+              {% if selected_status %}Status: <strong>{{ selected_status|capfirst }}</strong>{% endif %}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+      
       <div class="grid gap-6" id="donations-list">
         {% for d in donations %}
         <div class="bg-white rounded-xl shadow-md p-6 flex justify-between items-center">
@@ -100,8 +135,8 @@
         </div>
         {% empty %}
         <div class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
-          <p>No donations yet.</p>
-          <p class="mt-2">Click "New Donation" to get started!</p>
+          <p>No donations found with the selected filters.</p>
+          <p class="mt-2">Try changing your filters or <a href="#" data-open-modal="donation" class="text-blue-600 hover:underline">create a new donation</a>!</p>
         </div>
         {% endfor %}
       </div>

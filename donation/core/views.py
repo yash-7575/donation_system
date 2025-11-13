@@ -29,7 +29,7 @@ def login_page(request):
             login(request, user)
 
             try:
-                role = user.userprofile.role
+                role = UserProfile.objects.get(user=user).role
                 if role == "donor":
                     return redirect("donor")
                 elif role == "ngo":
@@ -157,15 +157,19 @@ def signup_recipient(request):
 
 # ---------------- SIGNUP SUCCESS REDIRECT ----------------
 def signup_success(request):
-    role = request.user.userprofile.role
-    if role == "donor":
-        return redirect("donor")
-    elif role == "ngo":
-        return redirect("ngo")
-    return redirect("recipient")
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        role = user_profile.role
+        if role == "donor":
+            return redirect("donor")
+        elif role == "ngo":
+            return redirect("ngo")
+        else:
+            return redirect("recipient")
+    except UserProfile.DoesNotExist:
+        return redirect("home")
 
 
-# ---------------- DONOR DASHBOARD ----------------
 # ---------------- DONOR DASHBOARD ----------------
 def donor_dashboard(request):
     # Must be logged in
@@ -186,6 +190,10 @@ def donor_dashboard(request):
         messages.error(request, 'Donor profile not found')
         return redirect('home')
 
+    # Get filter parameters
+    selected_category = request.GET.get('category')
+    selected_status = request.GET.get('status')
+    
     # ✅ Handle new donation submission
     if request.method == 'POST':
         try:
@@ -205,8 +213,20 @@ def donor_dashboard(request):
         
         return redirect('donor')  # Refresh page
 
-    # ✅ Get donor's past donations
+    # ✅ Get donor's past donations with filtering
     donations = Donation.objects.filter(donor=donor).order_by('-created_at')
+    
+    # Apply filters
+    if selected_category:
+        donations = donations.filter(category=selected_category)
+    if selected_status:
+        donations = donations.filter(status=selected_status)
+    
+    # Get all unique donation categories for filter dropdown
+    available_categories = Donation.objects.filter(donor=donor).values_list('category', flat=True).distinct()
+    
+    # Get all unique donation statuses for filter dropdown
+    available_statuses = Donation.objects.filter(donor=donor).values_list('status', flat=True).distinct()
 
     # ✅ Calculate dashboard stats using aggregate functions
     from django.db.models import Count, Sum
@@ -227,7 +247,6 @@ def donor_dashboard(request):
     
     # Thank you notes (assuming these come from feedback related to this donor's delivered donations)
     # For now, we'll count feedback entries related to matches of this donor's delivered donations
-    from .models import Match, Feedback
     donor_matches = Match.objects.filter(donation__donor=donor, donation__status='delivered')
     thank_you_notes = Feedback.objects.filter(match_id__in=donor_matches.values_list('id', flat=True)).count()
 
@@ -238,8 +257,13 @@ def donor_dashboard(request):
         'delivered_donations': delivered_donations,
         'impact_score': impact_score,
         'thank_you_notes': thank_you_notes,
+        'available_categories': available_categories,
+        'available_statuses': available_statuses,
+        'selected_category': selected_category,
+        'selected_status': selected_status,
     }
     return render(request, 'donor_dashboard.html', context)
+
 
 def update_donation(request, donation_id):
     # Must be logged in
@@ -288,6 +312,7 @@ def update_donation(request, donation_id):
         }
         return JsonResponse(donation_data)
 
+
 def delete_donation(request, donation_id):
     # Must be logged in
     if not request.user.is_authenticated:
@@ -328,6 +353,7 @@ def delete_donation(request, donation_id):
         }
         return JsonResponse(donation_data)
 
+
 # ---------------- RECIPIENT DASHBOARD ----------------
 def recipient_dashboard(request):
     # Ensure logged in
@@ -335,7 +361,14 @@ def recipient_dashboard(request):
         return redirect('login')
 
     # Ensure user is recipient
-    recipient = Recipient.objects.get(user=request.user)
+    try:
+        recipient = Recipient.objects.get(user=request.user)
+    except Recipient.DoesNotExist:
+        return redirect('home')
+    
+    # Get filter parameters
+    selected_category = request.GET.get('category')
+    selected_urgency = request.GET.get('urgency')
 
     # Handle new request submission
     if request.method == "POST":
@@ -349,16 +382,32 @@ def recipient_dashboard(request):
         )
         return redirect('recipient')  # Refresh page after submit
 
-    # Get recipient requests
+    # Get recipient requests with filtering
     requests_list = Request.objects.filter(recipient=recipient).order_by('-created_at')
-
-    # Get available donations to browse
+    
+    # Apply filters
+    if selected_category:
+        requests_list = requests_list.filter(category=selected_category)
+    if selected_urgency:
+        requests_list = requests_list.filter(urgency=selected_urgency)
+    
+    # Get available donations to browse with filtering
     donations = Donation.objects.filter(status='pending')
+    if selected_category:
+        donations = donations.filter(category=selected_category)
+    
+    # Get all unique categories and urgencies for filter dropdowns
+    available_categories = Donation.objects.filter(status='pending').values_list('category', flat=True).distinct()
+    available_urgencies = Request.objects.filter(recipient=recipient).values_list('urgency', flat=True).distinct()
 
     context = {
         'recipient': recipient,
         'requests': requests_list,
         'donations': donations,
+        'available_categories': available_categories,
+        'available_urgencies': available_urgencies,
+        'selected_category': selected_category,
+        'selected_urgency': selected_urgency,
     }
     return render(request, 'recipient_dashboard.html', context)
 
@@ -467,4 +516,3 @@ def recipients_api(request):
         })
     
     return JsonResponse(recipients_data, safe=False)
-
