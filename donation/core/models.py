@@ -77,6 +77,7 @@ class Donation(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
+        ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
 

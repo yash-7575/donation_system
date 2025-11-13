@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -188,6 +188,9 @@ def signup_success(request):
 
 
 # ---------------- DONOR DASHBOARD ----------------
+# Add these functions to your views.py
+
+# ---------------- DONOR DASHBOARD (UPDATED) ----------------
 def donor_dashboard(request):
     # Must be logged in
     if not request.user.is_authenticated:
@@ -207,6 +210,10 @@ def donor_dashboard(request):
         messages.error(request, 'Donor profile not found')
         return redirect('home')
 
+    # Get filter parameters
+    selected_category = request.GET.get('category')
+    selected_status = request.GET.get('status')
+    
     # Handle new donation submission
     if request.method == 'POST':
         try:
@@ -226,14 +233,36 @@ def donor_dashboard(request):
         
         return redirect('donor')
 
-    # Get donor's past donations
+    # Get donor's past donations with filtering
     donations = Donation.objects.filter(donor=donor).order_by('-created_at')
+    
+    # Apply filters
+    if selected_category:
+        donations = donations.filter(category=selected_category)
+    if selected_status:
+        donations = donations.filter(status=selected_status)
+    
+    # Get all unique donation categories for filter dropdown
+    available_categories = Donation.objects.filter(donor=donor).values_list('category', flat=True).distinct()
+    
+    # Get all unique donation statuses for filter dropdown
+    available_statuses = Donation.objects.filter(donor=donor).values_list('status', flat=True).distinct()
 
     # Calculate dashboard stats
-    total_donations = donations.count()
-    delivered_donations = donations.filter(status='delivered').count()
-    impact_score = delivered_donations * 10
-    thank_you_notes = 0
+    total_donations = Donation.objects.filter(donor=donor).count()
+    delivered_donations = Donation.objects.filter(donor=donor, status='delivered').count()
+    
+    # Calculate total items delivered (sum of quantities)
+    total_items_delivered = Donation.objects.filter(
+        donor=donor, 
+        status='delivered'
+    ).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+    
+    # Impact score calculation (using total items delivered)
+    impact_score = total_items_delivered * 10
+    
+    # Thank you notes count (you may need to adjust based on your Feedback model)
+    thank_you_notes = 0  # Implement based on your feedback system
 
     context = {
         'donor': donor,
@@ -242,44 +271,231 @@ def donor_dashboard(request):
         'delivered_donations': delivered_donations,
         'impact_score': impact_score,
         'thank_you_notes': thank_you_notes,
+        'available_categories': available_categories,
+        'available_statuses': available_statuses,
+        'selected_category': selected_category,
+        'selected_status': selected_status,
     }
     return render(request, 'donor_dashboard.html', context)
 
 
-# ---------------- RECIPIENT DASHBOARD ----------------
+# ---------------- UPDATE DONATION ----------------
+def update_donation(request, donation_id):
+    # Must be logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # Must be donor
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'donor':
+            return redirect('home')
+    except UserProfile.DoesNotExist:
+        return redirect('login')
+
+    # Use get_object_or_404 to fetch the donation only if it belongs to the logged-in user
+    donation = get_object_or_404(Donation, id=donation_id, donor__user=request.user)
+
+    # Handle update submission
+    if request.method == 'POST':
+        try:
+            donation.title = request.POST.get('title')
+            donation.description = request.POST.get('description', '')
+            donation.category = request.POST.get('category')
+            donation.quantity = int(request.POST.get('quantity', 1))
+            donation.status = request.POST.get('status')
+            donation.image_url = request.POST.get('image_url', '')
+            donation.save()
+            messages.success(request, 'Donation updated successfully!')
+        except Exception as e:
+            logger.error(f'Error updating donation: {e}')
+            messages.error(request, 'Failed to update donation')
+        
+        return redirect('donor')
+    else:
+        # For GET request, render the edit form template
+        context = {
+            'donation_obj': donation
+        }
+        return render(request, 'edit_donation.html', context)
+
+
+# ---------------- DELETE DONATION ----------------
+def delete_donation(request, donation_id):
+    # Must be logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # Must be donor
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'donor':
+            return redirect('home')
+    except UserProfile.DoesNotExist:
+        return redirect('login')
+
+    # Use get_object_or_404 to fetch the donation only if it belongs to the logged-in user
+    donation = get_object_or_404(Donation, id=donation_id, donor__user=request.user)
+
+    # Handle delete
+    if request.method == 'POST':
+        try:
+            donation.delete()
+            messages.success(request, 'Donation deleted successfully!')
+        except Exception as e:
+            logger.error(f'Error deleting donation: {e}')
+            messages.error(request, 'Failed to delete donation')
+        
+        return redirect('donor')
+    else:
+        # For GET request, render a confirmation page
+        context = {
+            'donation_obj': donation
+        }
+        return render(request, 'delete_donation.html', context)
+
+# ---------------- RECIPIENT DASHBOARD (Corrected) ----------------
 def recipient_dashboard(request):
     # Ensure logged in
     if not request.user.is_authenticated:
         return redirect('login')
 
     # Ensure user is recipient
-    recipient = Recipient.objects.get(user=request.user)
+    try:
+        recipient = Recipient.objects.get(user=request.user)
+    except Recipient.DoesNotExist:
+        messages.error(request, 'Recipient profile not found.')
+        return redirect('login')
 
     # Handle new request submission
     if request.method == "POST":
+        title = request.POST.get('title')
+        
+        # --- VALIDATION ADDED HERE ---
+        # Check if the title is empty or just whitespace
+        if not title or not title.strip():
+            messages.error(request, 'Title is a required field.')
+            return redirect('recipient')
+        
+        # If validation passes, create the request
         Request.objects.create(
             recipient=recipient,
-            title=request.POST.get('title'),
+            title=title,
             description=request.POST.get('description', ''),
             category=request.POST.get('category'),
             urgency=request.POST.get('urgency'),
             status="pending"
         )
+        messages.success(request, 'Request submitted successfully!')
         return redirect('recipient')
 
-    # Get recipient requests
-    requests_list = Request.objects.filter(recipient=recipient).order_by('-created_at')
+    # Read category from GET
+    selected_category = request.GET.get("category")
+
+    # Get recipient requests (changed from requests_list to my_requests as per requirements)
+    my_requests = Request.objects.filter(recipient=recipient).order_by('-created_at')
+    
+    # Filter requests by category if selected
+    if selected_category:
+        my_requests = my_requests.filter(category=selected_category)
+    
+    # Fetch distinct request categories for dropdown
+    categories = Request.objects.values_list("category", flat=True).distinct()
 
     # Get available donations to browse
     donations = Donation.objects.filter(status='pending')
+    
+    # --- ADDED STATS FOR DASHBOARD VIEW ---
+    total_requests = my_requests.count()
+    pending_requests = my_requests.filter(status='pending').count()
+    fulfilled_requests = my_requests.filter(status='fulfilled').count()
 
     context = {
         'recipient': recipient,
-        'requests': requests_list,
+        'my_requests': my_requests,  # Changed from 'requests' to 'my_requests'
+        'requests': my_requests,     # Keep original for backward compatibility
         'donations': donations,
+        'total_requests': total_requests,
+        'pending_requests': pending_requests,
+        'fulfilled_requests': fulfilled_requests,
+        'categories': categories,
+        'selected_category': selected_category,
     }
     return render(request, 'recipient_dashboard.html', context)
 
+# ---------------- UPDATE REQUEST ----------------
+def update_request(request, request_id):
+    # Must be logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # Must be recipient
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'recipient':
+            return redirect('home')
+    except UserProfile.DoesNotExist:
+        return redirect('login')
+
+    # Use get_object_or_404 to fetch the request only if it belongs to the logged-in user
+    recipient_request = get_object_or_404(Request, id=request_id, recipient__user=request.user)
+
+    # Handle update submission
+    if request.method == 'POST':
+        try:
+            recipient_request.title = request.POST.get('title')
+            recipient_request.description = request.POST.get('description', '')
+            recipient_request.category = request.POST.get('category')
+            recipient_request.urgency = request.POST.get('urgency')
+            recipient_request.status = request.POST.get('status')
+            recipient_request.save()
+            messages.success(request, 'Request updated successfully!')
+        except Exception as e:
+            logger.error(f'Error updating request: {e}')
+            messages.error(request, 'Failed to update request')
+        
+        return redirect('recipient')
+    else:
+        # For GET request, render the edit form template
+        context = {
+            'request_obj': recipient_request
+        }
+        return render(request, 'edit_request.html', context)
+
+
+# ---------------- DELETE REQUEST ----------------
+def delete_request(request, request_id):
+    # Must be logged in
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    # Must be recipient
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'recipient':
+            return redirect('home')
+    except UserProfile.DoesNotExist:
+        return redirect('login')
+
+    # Use get_object_or_404 to fetch the request only if it belongs to the logged-in user
+    recipient_request = get_object_or_404(Request, id=request_id, recipient__user=request.user)
+
+    # Handle the actual deletion on POST
+    if request.method == 'POST':
+        try:
+            recipient_request.delete()
+            messages.success(request, 'Request deleted successfully!')
+        except Exception as e:
+            logger.error(f'Error deleting request: {e}')
+            messages.error(request, 'Failed to delete request.')
+        
+        return redirect('recipient')
+    
+    # If it's a GET request, render a confirmation page
+    context = {
+        'request_obj': recipient_request
+    }
+    return render(request, 'delete_request.html', context)
 
 # ---------------- NGO DASHBOARD ----------------
 def ngo_dashboard(request):

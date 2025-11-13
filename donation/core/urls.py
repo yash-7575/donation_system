@@ -16,6 +16,13 @@ urlpatterns = [
     path('recipient/', views.recipient_dashboard, name='recipient'),
     path('ngo/', views.ngo_dashboard, name='ngo'),
     
+    path('donor/update/<int:donation_id>/', views.update_donation, name='update_donation'),
+    path('donor/delete/<int:donation_id>/', views.delete_donation, name='delete_donation'),
+    
+    # Recipient request management
+    path('recipient/update/<int:request_id>/', views.update_request, name='update_request'),
+    path('recipient/delete/<int:request_id>/', views.delete_request, name='delete_request'),
+    
     # API endpoints for NGO dashboard
     path('api/donors/', views.donors_api, name='donors_api'),
     path('api/recipients/', views.recipients_api, name='recipients_api'),

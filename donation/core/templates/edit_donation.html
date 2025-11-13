@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Edit Donation — GiveHope{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-cyan-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md p-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Edit Donation</h1>
+      
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-6">
+          <label class="block text-sm font-semibold mb-2">Item Title</label>
+          <input name="title" type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donation_obj.title }}" required />
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-semibold mb-2">Description</label>
+          <textarea name="description" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" rows="4">{{ donation_obj.description }}</textarea>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Category</label>
+            <input name="category" type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donation_obj.category }}" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold mb-2">Quantity</label>
+            <input name="quantity" type="number" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donation_obj.quantity }}" min="1" required />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-semibold mb-2">Status</label>
+            <select name="status" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+              <option value="pending" {% if donation_obj.status == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="accepted" {% if donation_obj.status == 'accepted' %}selected{% endif %}>Accepted</option>
+              <option value="delivered" {% if donation_obj.status == 'delivered' %}selected{% endif %}>Delivered</option>
+              <option value="cancelled" {% if donation_obj.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-semibold mb-2">Image URL (Optional)</label>
+          <input name="image_url" type="url" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ donation_obj.image_url }}" placeholder="https://example.com/image.jpg" />
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4">
+          <a href="{% url 'donor' %}" class="px-6 py-3 rounded-lg border-2">Cancel</a>
+          <button type="submit" class="px-6 py-3 rounded-lg gradient-primary text-white">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

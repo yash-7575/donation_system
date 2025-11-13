@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Delete Donation — GiveHope{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-cyan-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md p-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Delete Donation</h1>
+      
+      <div class="mb-6">
+        <p class="text-gray-600 mb-6">Are you sure you want to delete the donation "<strong>{{ donation_obj.title }}</strong>"? This action cannot be undone.</p>
+        
+        <form method="POST">
+          {% csrf_token %}
+          <div class="flex justify-end gap-3 pt-4">
+            <a href="{% url 'donor' %}" class="px-6 py-3 rounded-lg border-2">Cancel</a>
+            <button type="submit" class="px-6 py-3 rounded-lg bg-red-600 text-white">Delete Donation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
