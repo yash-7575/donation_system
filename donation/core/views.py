@@ -30,13 +30,63 @@ def home(request):
         total_ngos = 0
         active_donors = 0
         
+    # Fetch recent feedback with user profile information
+    try:
+        recent_feedback = Feedback.objects.select_related('user__userprofile').order_by('-created_at')[:4]
+        feedback_data = []
+        for feedback in recent_feedback:
+            # Get user role
+            try:
+                user_role = feedback.user.userprofile.role
+            except UserProfile.DoesNotExist:
+                user_role = "User"
+            
+            # Get user name based on role
+            user_name = feedback.user.get_full_name() or feedback.user.username
+            if not user_name:
+                user_name = "Anonymous"
+            
+            # For donors, try to get donor name
+            if user_role == "donor":
+                try:
+                    donor = Donor.objects.get(user=feedback.user)
+                    user_name = donor.name
+                except Donor.DoesNotExist:
+                    pass
+            # For recipients, try to get recipient name
+            elif user_role == "recipient":
+                try:
+                    recipient = Recipient.objects.get(user=feedback.user)
+                    user_name = recipient.name
+                except Recipient.DoesNotExist:
+                    pass
+            # For NGOs, try to get NGO name
+            elif user_role == "ngo":
+                try:
+                    ngo = NGO.objects.get(user=feedback.user)
+                    user_name = ngo.ngo_name
+                except NGO.DoesNotExist:
+                    pass
+            
+            feedback_data.append({
+                'name': user_name,
+                'role': user_role.capitalize(),
+                'rating': feedback.rating,
+                'comment': feedback.comment,
+                'created_at': feedback.created_at
+            })
+    except Exception as e:
+        logger.error(f"Error fetching feedback: {e}")
+        feedback_data = []
+        
     context = {
         'home_stats': {
             'items_donated': items_donated,
             'families_helped': families_helped,
             'total_ngos': total_ngos,
             'active_donors': active_donors,
-        }
+        },
+        'feedback_data': feedback_data
     }
     return render(request, "home.html", context)
 
@@ -1148,3 +1198,277 @@ def mark_fulfilled(request, request_id):
         messages.error(request, 'Request not found or not in accepted status.')
     
     return redirect('ngo')
+
+
+# ---------------- FEEDBACK VIEWS ----------------
+def donor_feedback(request):
+    """Handle feedback for donors"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is donor
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'donor':
+            return redirect('home')
+        donor = Donor.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, Donor.DoesNotExist):
+        messages.error(request, 'Donor profile not found')
+        return redirect('login')
+    
+    # Handle feedback submission
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+        donation_id = request.POST.get('donation')
+        
+        # Validation
+        if not rating or not comment or not donation_id:
+            messages.error(request, 'All fields are required.')
+        elif int(rating) < 1 or int(rating) > 5:
+            messages.error(request, 'Rating must be between 1 and 5.')
+        else:
+            try:
+                # Verify the donation belongs to this donor
+                donation = Donation.objects.get(id=donation_id, donor=donor)
+                
+                # Create feedback
+                Feedback.objects.create(
+                    user=request.user,
+                    donation=donation,
+                    rating=rating,
+                    comment=comment
+                )
+                messages.success(request, 'Feedback submitted successfully!')
+            except Donation.DoesNotExist:
+                messages.error(request, 'Invalid donation selected.')
+            except Exception as e:
+                messages.error(request, 'Failed to submit feedback.')
+        
+        return redirect('donor_feedback')
+    
+    # Get donations related to this donor
+    donations = Donation.objects.filter(donor=donor).order_by('-created_at')
+    
+    # Get past feedback from this user
+    feedback_list = Feedback.objects.filter(user=request.user).order_by('-created_at')
+    
+    context = {
+        'donor': donor,
+        'donations': donations,
+        'feedback_list': feedback_list,
+    }
+    return render(request, 'donor_feedback.html', context)
+
+
+def recipient_feedback(request):
+    """Handle feedback for recipients"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is recipient
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'recipient':
+            return redirect('home')
+        recipient = Recipient.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, Recipient.DoesNotExist):
+        messages.error(request, 'Recipient profile not found')
+        return redirect('login')
+    
+    # Handle feedback submission
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+        donation_id = request.POST.get('donation')
+        
+        # Validation
+        if not rating or not comment or not donation_id:
+            messages.error(request, 'All fields are required.')
+        elif int(rating) < 1 or int(rating) > 5:
+            messages.error(request, 'Rating must be between 1 and 5.')
+        else:
+            try:
+                # Verify the donation is accepted
+                donation = Donation.objects.get(id=donation_id, status='accepted')
+                
+                # Create feedback
+                Feedback.objects.create(
+                    user=request.user,
+                    donation=donation,
+                    rating=rating,
+                    comment=comment
+                )
+                messages.success(request, 'Feedback submitted successfully!')
+            except Donation.DoesNotExist:
+                messages.error(request, 'Invalid donation selected.')
+            except Exception as e:
+                messages.error(request, 'Failed to submit feedback.')
+        
+        return redirect('recipient_feedback')
+    
+    # Get accepted donations
+    donations = Donation.objects.filter(status='accepted').order_by('-created_at')
+    
+    # Get past feedback from this user
+    feedback_list = Feedback.objects.filter(user=request.user).order_by('-created_at')
+    
+    context = {
+        'recipient': recipient,
+        'donations': donations,
+        'feedback_list': feedback_list,
+    }
+    return render(request, 'recipient_feedback.html', context)
+
+
+def edit_feedback(request, id):
+    """Edit recipient feedback"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is recipient
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'recipient':
+            return redirect('home')
+        recipient = Recipient.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, Recipient.DoesNotExist):
+        messages.error(request, 'Recipient profile not found')
+        return redirect('login')
+    
+    # Get the feedback object, ensuring it belongs to the current user
+    try:
+        feedback = Feedback.objects.get(feedback_id=id, user=request.user)
+    except Feedback.DoesNotExist:
+        messages.error(request, 'Feedback not found.')
+        return redirect('recipient_feedback')
+    
+    # Handle feedback update
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+        
+        # Validation
+        if not rating or not comment:
+            messages.error(request, 'All fields are required.')
+        elif int(rating) < 1 or int(rating) > 5:
+            messages.error(request, 'Rating must be between 1 and 5.')
+        else:
+            try:
+                # Update feedback
+                feedback.rating = rating
+                feedback.comment = comment
+                feedback.save()
+                messages.success(request, 'Feedback updated successfully!')
+                return redirect('recipient_feedback')
+            except Exception as e:
+                messages.error(request, 'Failed to update feedback.')
+    
+    # Get accepted donations for the dropdown (but keep the current donation)
+    donations = Donation.objects.filter(status='accepted').order_by('-created_at')
+    
+    context = {
+        'recipient': recipient,
+        'feedback': feedback,
+        'donations': donations,
+    }
+    return render(request, 'recipient_feedback.html', context)
+
+
+def delete_feedback(request, id):
+    """Delete recipient feedback"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is recipient
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'recipient':
+            return redirect('home')
+        recipient = Recipient.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, Recipient.DoesNotExist):
+        messages.error(request, 'Recipient profile not found')
+        return redirect('login')
+    
+    # Get the feedback object, ensuring it belongs to the current user
+    try:
+        feedback = Feedback.objects.get(feedback_id=id, user=request.user)
+    except Feedback.DoesNotExist:
+        messages.error(request, 'Feedback not found.')
+        return redirect('recipient_feedback')
+    
+    # Handle feedback deletion
+    if request.method == 'POST':
+        try:
+            feedback.delete()
+            messages.success(request, 'Feedback deleted successfully!')
+        except Exception as e:
+            messages.error(request, 'Failed to delete feedback.')
+        return redirect('recipient_feedback')
+    
+    # For GET request, show confirmation page
+    context = {
+        'recipient': recipient,
+        'feedback': feedback,
+    }
+    return render(request, 'recipient_feedback.html', context)
+
+
+def ngo_feedback(request):
+    """Handle feedback for NGOs"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Ensure user is NGO
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if user_profile.role != 'ngo':
+            return redirect('home')
+        ngo = NGO.objects.get(user=request.user)
+    except (UserProfile.DoesNotExist, NGO.DoesNotExist):
+        messages.error(request, 'NGO profile not found')
+        return redirect('login')
+    
+    # Handle feedback submission
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+        donation_id = request.POST.get('donation')
+        
+        # Validation
+        if not rating or not comment or not donation_id:
+            messages.error(request, 'All fields are required.')
+        elif int(rating) < 1 or int(rating) > 5:
+            messages.error(request, 'Rating must be between 1 and 5.')
+        else:
+            try:
+                # Verify the donation belongs to this NGO
+                donation = Donation.objects.get(id=donation_id, ngo=ngo)
+                
+                # Create feedback
+                Feedback.objects.create(
+                    user=request.user,
+                    donation=donation,
+                    rating=rating,
+                    comment=comment
+                )
+                messages.success(request, 'Feedback submitted successfully!')
+            except Donation.DoesNotExist:
+                messages.error(request, 'Invalid donation selected.')
+            except Exception as e:
+                messages.error(request, 'Failed to submit feedback.')
+        
+        return redirect('ngo_feedback')
+    
+    # Get donations related to this NGO
+    donations = Donation.objects.filter(ngo=ngo).order_by('-created_at')
+    
+    # Get past feedback from this user
+    feedback_list = Feedback.objects.filter(user=request.user).order_by('-created_at')
+    
+    context = {
+        'ngo': ngo,
+        'donations': donations,
+        'feedback_list': feedback_list,
+    }
+    return render(request, 'ngo_feedback.html', context)

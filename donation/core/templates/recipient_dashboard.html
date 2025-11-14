@@ -20,6 +20,7 @@
       <button data-tab-btn="dashboard" onclick="activateTab('recipient-scope','dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-accent text-white shadow-lg"><span>Dashboard</span></button>
       <button data-tab-btn="requests" onclick="activateTab('recipient-scope','requests')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>My Requests</span></button>
       <button data-tab-btn="browse" onclick="activateTab('recipient-scope','browse')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Browse Donations</span></button>
+      <a href="{% url 'recipient_feedback' %}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Feedback</span></a>
       <button data-tab-btn="profile" onclick="activateTab('recipient-scope','profile')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>Profile</span></button>
       <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
     </nav>

@@ -155,13 +155,36 @@
     </div>
   </section>
 
-  <section id="feedback" class="py-24 bg-white">
-    <div class="container mx-auto px-6">
-      <div class="text-center mb-16 animate-fade-in-up">
-        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">What People Say</h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">Hear from our community of donors, recipients, and NGO partners</p>
-      </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+<section id="feedback" class="py-24 bg-white">
+  <div class="container mx-auto px-6">
+    <div class="text-center mb-16 animate-fade-in-up">
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">What People Say</h2>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">Hear from our community of donors, recipients, and NGO partners</p>
+    </div>
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {% for feedback in feedback_data|slice:":4" %}
+        <div class="bg-white rounded-xl shadow-md p-6 animate-scale-in" {% if forloop.counter > 1 %}style="animation-delay:.{{ forloop.counter0 }}s"{% endif %}>
+          <div class="flex items-center mb-3">
+            <div class="w-12 h-12 gradient-primary rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
+              {{ feedback.name|first|upper }}
+            </div>
+            <div>
+              <div class="font-semibold text-gray-900">{{ feedback.name }}</div>
+              <div class="text-sm text-gray-600">{{ feedback.role }}</div>
+            </div>
+          </div>
+          <div class="flex mb-3">
+            {% for i in "12345" %}
+              {% if forloop.counter <= feedback.rating %}
+                <span class="w-4 h-4 text-amber-400">★</span>
+              {% else %}
+                <span class="w-4 h-4 text-gray-300">☆</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <p class="text-gray-700 text-sm leading-relaxed">{{ feedback.comment }}</p>
+        </div>
+      {% empty %}
         <div class="bg-white rounded-xl shadow-md p-6 animate-scale-in">
           <div class="flex items-center mb-3"><div class="w-12 h-12 gradient-primary rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">S</div><div><div class="font-semibold text-gray-900">Sarah J.</div><div class="text-sm text-gray-600">Recipient</div></div></div>
           <div class="flex mb-3">{% for _ in '****' %}<span class="w-4 h-4 text-amber-400">★</span>{% endfor %}</div>
@@ -182,9 +205,11 @@
           <div class="flex mb-3">{% for _ in '****' %}<span class="w-4 h-4 text-amber-400">★</span>{% endfor %}</div>
           <p class="text-gray-700 text-sm leading-relaxed">Best donation platform I've used! Transparent, efficient, and truly makes a difference.</p>
         </div>
-      </div>
+      {% endfor %}
     </div>
-  </section>
+  </div>
+</section>
+
 
   <section class="py-24 gradient-hero">
     <div class="container mx-auto px-6 text-center text-white">

@@ -36,16 +36,16 @@
         <form method="post" action="{% url 'login' %}" class="space-y-6" data-role-form>
           {% csrf_token %}
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">I am a</label>
-            <div class="grid grid-cols-3 gap-2" data-role-group>
+            {% comment %} <label class="block text-sm font-semibold text-gray-700 mb-2">I am a</label> {% endcomment %}
+            {% comment %} <div class="grid grid-cols-3 gap-2" data-role-group>
               <button type="button" data-role-btn="donor" class="py-3 px-4 rounded-lg font-medium gradient-primary text-white">Donor</button>
               <button type="button" data-role-btn="recipient" class="py-3 px-4 rounded-lg font-medium bg-gray-100 text-gray-700">Recipient</button>
-              <button type="button" data-role-btn="ngo_admin" class="py-3 px-4 rounded-lg font-medium bg-gray-100 text-gray-700">NGO Admin</button>
-            </div>
-            <input type="hidden" name="role" value="donor" />
+              <button type="button" data-role-btn="ngo_admin" class="py-3 px-4 rounded-lg font-medium bg-gray-100 text-gray-700">NGO</button>
+            </div> {% endcomment %}
+            {% comment %} <input type="hidden" name="role" value="donor" /> {% endcomment %}
           </div>
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
             <input type="text" name="username" class="w-full pr-4 py-3 pl-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all" placeholder="Username" required>
           </div>
           <div>

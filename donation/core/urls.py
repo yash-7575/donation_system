@@ -23,6 +23,15 @@ urlpatterns = [
     path('recipient/update/<int:request_id>/', views.update_request, name='update_request'),
     path('recipient/delete/<int:request_id>/', views.delete_request, name='delete_request'),
     
+    # Feedback URLs
+    path('donor/feedback/', views.donor_feedback, name='donor_feedback'),
+    path('recipient/feedback/', views.recipient_feedback, name='recipient_feedback'),
+    path('ngo/feedback/', views.ngo_feedback, name='ngo_feedback'),
+    
+    # Recipient feedback management
+    path('recipient/feedback/edit/<int:id>/', views.edit_feedback, name='edit_feedback'),
+    path('recipient/feedback/delete/<int:id>/', views.delete_feedback, name='delete_feedback'),
+    
     # API endpoints for NGO dashboard
     path('api/donors/', views.donors_api, name='donors_api'),
     path('api/recipients/', views.recipients_api, name='recipients_api'),

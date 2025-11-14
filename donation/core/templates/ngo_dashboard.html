@@ -26,6 +26,7 @@
       <button data-tab-btn="donations" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all"><span>🎁 Donations</span></button>
       <button data-tab-btn="requests" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all"><span>🎯 Requests</span></button>
       <button data-tab-btn="analytics" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all"><span>📈 Analytics</span></button>
+      <a href="{% url 'ngo_feedback' %}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"><span>💬 Feedback</span></a>
       <button data-tab-btn="profile" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all"><span>👤 Profile</span></button>
       <button data-tab-btn="dbms" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all"><span>🗄️ DBMS Demo</span></button>
     </nav>
@@ -204,460 +205,597 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="8" class="py-8 text-center text-gray-500">No donations found</td>
+                <td colspan="8" class="py-6 px-4 text-center text-gray-500">No donations found</td>
               </tr>
             {% endif %}
           </tbody>
         </table>
       </div>
     </div>
-    
-    <!-- TAB 3: Recipient Requests Management -->
+
+    <!-- TAB 3: Requests Management -->
     <div data-tab-panel="requests" class="animate-fade-in hidden">
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">🎯 Recipient Requests</h1>
-            <p class="text-gray-600">Manage and fulfill requests from recipients.</p>
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">🎯 Requests Management</h1>
+        <p class="text-gray-600">Track and manage all incoming requests from recipients.</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-md p-2 overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Title</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Category</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Urgency</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Status</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Recipient Name</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">City</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Family Size</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Date</th>
+              <th class="py-3 px-4 text-left text-gray-600 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if requests %}
+              {% for request in requests %}
+              <tr class="border-b hover:bg-gray-50">
+                <td class="py-3 px-4">{{ request.title }}</td>
+                <td class="py-3 px-4">{{ request.category|title }}</td>
+                <td class="py-3 px-4">
+                  {% if request.urgency == 'critical' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Critical</span>
+                  {% elif request.urgency == 'high' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">High</span>
+                  {% elif request.urgency == 'medium' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
+                  {% else %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Low</span>
+                  {% endif %}
+                </td>
+                <td class="py-3 px-4">
+                  {% if request.status == 'fulfilled' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Fulfilled</span>
+                  {% elif request.status == 'accepted' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Accepted</span>
+                  {% elif request.status == 'cancelled' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Declined</span>
+                  {% else %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                  {% endif %}
+                </td>
+                <td class="py-3 px-4">{{ request.recipient.name }}</td>
+                <td class="py-3 px-4">{{ request.recipient.city|default:"N/A" }}</td>
+                <td class="py-3 px-4">{{ request.recipient.family_size }}</td>
+                <td class="py-3 px-4">{{ request.created_at|date:"M d, Y" }}</td>
+                <td class="py-3 px-4 space-x-2">
+                  <button class="text-blue-600 hover:underline text-sm">View</button>
+                  {% if request.status == 'pending' %}
+                    <form method="POST" action="{% url 'accept_request' request.id %}" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="text-purple-600 hover:underline text-sm">Accept</button>
+                    </form>
+                    <form method="POST" action="{% url 'decline_request' request.id %}" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="text-red-600 hover:underline text-sm">Decline</button>
+                    </form>
+                  {% elif request.status == 'accepted' %}
+                    <form method="POST" action="{% url 'mark_fulfilled' request.id %}" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="text-green-600 hover:underline text-sm">Mark Fulfilled</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="9" class="py-6 px-4 text-center text-gray-500">No requests found</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 4: Analytics -->
+    <div data-tab-panel="analytics" class="animate-fade-in hidden">
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">📈 Analytics Dashboard</h1>
+        <p class="text-gray-600">Detailed insights and trends for your NGO operations.</p>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Top Cities Chart -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Top Donor Cities</h3>
+          {% if top_cities %}
+            <div class="space-y-3">
+              {% for city in top_cities %}
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3 flex-1">
+                    <div class="w-32 text-gray-700 font-medium">{{ city.city }}</div>
+                    <div class="flex-1 bg-gray-200 rounded-full h-4 overflow-hidden">
+                      <div class="bg-gradient-to-r from-purple-500 to-cyan-500 h-full rounded-full" 
+                           style="width: {% widthratio city.count top_cities.0.count 100 %}%"></div>
+                    </div>
+                  </div>
+                  <div class="text-gray-900 font-bold ml-4">{{ city.count }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="h-48 bg-gray-50 rounded-lg flex items-center justify-center">
+              <p class="text-gray-500">No city data available yet</p>
+            </div>
+          {% endif %}
         </div>
-        <div class="bg-white rounded-xl shadow-md p-2 overflow-x-auto">
+        
+        <!-- Request Urgency Distribution -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Request Urgency Distribution</h3>
+          {% if urgency_distribution %}
+            <div class="space-y-3">
+              {% for item in urgency_distribution %}
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3 flex-1">
+                    <div class="w-32 text-gray-700 font-medium">{{ item.urgency|title }}</div>
+                    <div class="flex-1 bg-gray-200 rounded-full h-4 overflow-hidden">
+                      <div class="bg-gradient-to-r from-purple-500 to-cyan-500 h-full rounded-full" 
+                           style="width: {% widthratio item.count urgency_distribution.0.count 100 %}%"></div>
+                    </div>
+                  </div>
+                  <div class="text-gray-900 font-bold ml-4">{{ item.count }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="h-48 bg-gray-50 rounded-lg flex items-center justify-center">
+              <p class="text-gray-500">No urgency data available yet</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Monthly Trends -->
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Monthly Activity Trends</h3>
+        {% if monthly_donations or monthly_requests %}
+          <div class="h-64 flex items-end space-x-2 justify-center">
+            {% for i in "012345" %}
+              {% with month_index=i|add:"0" %}
+                {% for donation in monthly_donations %}
+                  {% if donation.month.month == month_index %}
+                    <div class="flex flex-col items-center">
+                      <div class="w-12 bg-purple-500 rounded-t" style="height: {% widthratio donation.count 1 10 %}px"></div>
+                      <div class="text-xs text-gray-600 mt-2">{{ donation.month|date:"M" }}</div>
+                      <div class="text-xs text-purple-600">D: {{ donation.count }}</div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+                {% for request in monthly_requests %}
+                  {% if request.month.month == month_index %}
+                    <div class="flex flex-col items-center">
+                      <div class="w-12 bg-cyan-500 rounded-t" style="height: {% widthratio request.count 1 10 %}px"></div>
+                      <div class="text-xs text-gray-600 mt-2">{{ request.month|date:"M" }}</div>
+                      <div class="text-xs text-cyan-600">R: {{ request.count }}</div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              {% endwith %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+            <p class="text-gray-500">No trend data available yet</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 5: Profile -->
+    <div data-tab-panel="profile" class="animate-fade-in hidden">
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">👤 NGO Profile</h1>
+        <p class="text-gray-600">Manage your organization's information and settings.</p>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Profile Card -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex flex-col items-center">
+              <div class="w-24 h-24 bg-gradient-to-br from-purple-500 to-orange-400 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4">
+                {{ ngo.ngo_name|first|upper }}
+              </div>
+              <h2 class="text-xl font-bold text-gray-900">{{ ngo.ngo_name }}</h2>
+              <p class="text-gray-600">{{ ngo.city }}, {{ ngo.state }}</p>
+              <div class="mt-4 w-full">
+                <div class="flex justify-between text-sm text-gray-600">
+                  <span>Member since</span>
+                  <span>{{ ngo.user.date_joined|date:"M Y" }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Profile Form -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Organization Information</h3>
+            <form class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">NGO Name</label>
+                  <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.ngo_name }}">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                  <input type="tel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.phone }}">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Website</label>
+                  <input type="url" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.website|default:'' }}">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                  <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.city }}">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                <textarea class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" rows="3">{{ ngo.address|default:'' }}</textarea>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                  <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.state }}">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Pincode</label>
+                  <input type="text" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" value="{{ ngo.pincode }}">
+                </div>
+              </div>
+              <div class="flex justify-end gap-3 pt-4">
+                <button type="button" class="px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700">Cancel</button>
+                <button type="submit" class="px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 text-white">Update Profile</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: DBMS Demo -->
+    <div data-tab-panel="dbms" class="animate-fade-in hidden">
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">🗄️ Database Management System Demo</h1>
+        <p class="text-gray-600">Explore various SQL JOIN operations and database queries.</p>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- INNER JOIN Demo -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">INNER JOIN - Donations with Donors</h3>
+          <div class="mb-4">
+            <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">SELECT D.title, D.category, DO.name AS donor_name, D.status
+FROM donations AS D
+INNER JOIN donors AS DO ON D.donor_id = DO.id;</pre>
+          </div>
+          <div class="overflow-x-auto">
             <table class="min-w-full">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Request</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Recipient</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Category</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Urgency</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">City</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Status</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Date</th>
-                  <th class="py-3 px-4 text-left text-gray-600 font-semibold">Actions</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donation Title</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Category</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donor Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {% if requests %}
-                  {% for request in requests %}
-                  <tr class="border-b hover:bg-gray-50">
-                    <td class="py-3 px-4">{{ request.title }}</td>
-                    <td class="py-3 px-4">{{ request.recipient.name }}</td>
-                    <td class="py-3 px-4">{{ request.category|title }}</td>
-                    <td class="py-3 px-4">
-                      {% if request.urgency == 'high' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">High</span>
-                      {% elif request.urgency == 'medium' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>
-                      {% else %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Low</span>
-                      {% endif %}
-                    </td>
-                    <td class="py-3 px-4">{{ request.recipient.city|default:"N/A" }}</td>
-                    <td class="py-3 px-4">
-                      {% if request.status == 'fulfilled' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Fulfilled</span>
-                      {% elif request.status == 'accepted' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Accepted</span>
-                      {% elif request.status == 'cancelled' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Declined</span>
-                      {% else %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                      {% endif %}
-                    </td>
-                    <td class="py-3 px-4">{{ request.created_at|date:"M d, Y" }}</td>
-                    <td class="py-3 px-4">
-                      {% if request.status == 'pending' %}
-                        <form method="POST" action="{% url 'accept_request' request.id %}" class="inline">
-                          {% csrf_token %}
-                          <button type="submit" class="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-purple-700">Accept</button>
-                        </form>
-                        <form method="POST" action="{% url 'decline_request' request.id %}" class="inline">
-                          {% csrf_token %}
-                        <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-700">Decline</button>
-                        </form>
-                      {% elif request.status == 'accepted' %}
-                        <form method="POST" action="{% url 'mark_fulfilled' request.id %}" class="inline">
-                          {% csrf_token %}
-                          <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700">Mark Fulfilled</button>
-                        </form>
-                      {% else %}
-                        <button class="text-blue-600 hover:underline text-sm">View Details</button>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="8" class="py-8 text-center text-gray-500">No requests found</td>
-                  </tr>
-                {% endif %}
+              <tbody id="inner-join-results">
+                <tr>
+                  <td colspan="4" class="py-4 px-3 text-center text-gray-500">Loading data...</td>
+                </tr>
               </tbody>
             </table>
+          </div>
         </div>
-    </div>
-    
-
-    
-    <!-- TAB 5: Analytics & Insights -->
-    <div data-tab-panel="analytics" class="animate-fade-in hidden">
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">📈 Analytics & Insights</h1>
-            <p class="text-gray-600">Visualize your impact and identify trends.</p>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Donations vs Requests Trend -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Donations vs Requests (Last 6 Months)</h3>
-                {% if monthly_donations or monthly_requests %}
-                <div class="h-64 flex items-end justify-between space-x-2">
-                  {% for item in monthly_donations %}
-                  <div class="flex-1 flex flex-col items-center">
-                    <div class="w-full bg-purple-500 rounded-t" style="height: {% widthratio item.count 50 100 %}%"></div>
-                    <span class="text-xs text-gray-600 mt-2">{{ item.month|date:"M" }}</span>
-                  </div>
-                  {% endfor %}
-                </div>
-                {% else %}
-                <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                  <p class="text-gray-500">No trend data available yet</p>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Donations by Category -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Donations by Category</h3>
-                {% if donations_by_category %}
-                <div class="h-64 flex items-end justify-around">
-                  {% for item in donations_by_category %}
-                  <div class="flex flex-col items-center">
-                    <div class="w-16 bg-gradient-to-t from-purple-500 to-cyan-500 rounded-t" 
-                         style="height: {% widthratio item.count stats.total_donations 200 %}px"></div>
-                    <span class="text-xs text-gray-600 mt-2">{{ item.category|truncatewords:1 }}</span>
-                    <span class="text-xs font-bold">{{ item.count }}</span>
-                  </div>
-                  {% endfor %}
-                </div>
-                {% else %}
-                <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                  <p class="text-gray-500">No category data available yet</p>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Top 5 Donor Cities -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Top 5 Donor Cities</h3>
-                {% if top_cities %}
-                <ul class="space-y-3">
-                    {% for city in top_cities %}
-                    <li class="flex justify-between items-center">
-                      <span class="text-gray-700">{{ city.city }}</span>
-                      <span class="font-semibold text-gray-900">{{ city.count }} Donations</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <div class="h-48 flex items-center justify-center text-gray-500">
-                  No city data available yet
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Request Urgency Distribution -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Request Urgency Distribution</h3>
-                {% if urgency_distribution %}
-                <div class="space-y-3">
-                  {% for item in urgency_distribution %}
-                  <div class="flex items-center justify-between">
-                    <span class="text-gray-700 capitalize">{{ item.urgency }} Urgency</span>
-                    <div class="flex items-center space-x-2">
-                      <div class="w-32 bg-gray-200 rounded-full h-3">
-                        <div class="h-full rounded-full
-                                    {% if item.urgency == 'high' %}bg-red-500
-                                    {% elif item.urgency == 'medium' %}bg-yellow-500
-                                    {% else %}bg-blue-500{% endif %}"
-                             style="width: {% widthratio item.count stats.pending_requests 100 %}%"></div>
-                      </div>
-                      <span class="font-bold text-gray-900">{{ item.count }}</span>
-                    </div>
-                  </div>
-                  {% endfor %}
-                </div>
-                {% else %}
-                <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                  <p class="text-gray-500">No urgency data available yet</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <!-- TAB 6: NGO Profile -->
-    <div data-tab-panel="profile" class="animate-fade-in hidden">
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">👤 NGO Profile</h1>
-            <p class="text-gray-600">Keep your organization's details up to date.</p>
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-8 max-w-2xl mx-auto">
-            <form class="space-y-6" method="POST">
-                {% csrf_token %}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">NGO Name</label>
-                    <input type="text" value="{{ ngo.ngo_name }}" name="ngo_name" 
-                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Contact Email</label>
-                    <input type="email" value="{{ ngo.user.email }}" name="email"
-                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <input type="text" value="{{ ngo.phone }}" name="phone"
-                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Website</label>
-                    <input type="url" value="{{ ngo.website }}" name="website"
-                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">City</label>
-                        <input type="text" value="{{ ngo.city }}" name="city"
-                               class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">State</label>
-                        <input type="text" value="{{ ngo.state }}" name="state"
-                               class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Address</label>
-                    <textarea rows="3" name="address" 
-                              class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2">{{ ngo.address }}</textarea>
-                </div>
-                <div class="text-right">
-                    <button type="submit" class="bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-bold py-2 px-6 rounded-lg hover:opacity-90 transition-opacity">Update Profile</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- TAB 7: DBMS Demonstration -->
-    <div data-tab-panel="dbms" class="animate-fade-in hidden">
-        <!-- Hidden CSRF token for AJAX requests -->
-        {% csrf_token %}
         
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">🗄️ Database Concepts Demonstration</h1>
-            <p class="text-gray-600">An interactive look at the SQL queries powering GiveHope.</p>
-        </div>
+        <!-- LEFT JOIN Demo -->
         <div class="bg-white rounded-xl shadow-md p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">🔗 SQL Joins Demonstration</h3>
-            <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-                <p class="text-sm text-gray-700">
-                    <strong>Database Structure:</strong> The GiveHope system uses several interconnected tables:
-                    <span class="font-medium">donors</span> (people who donate items),
-                    <span class="font-medium">donations</span> (items being donated),
-                    <span class="font-medium">recipients</span> (people in need),
-                    <span class="font-medium">requests</span> (items needed),
-                    and <span class="font-medium">ngos</span> (organizations that facilitate donations).
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2 mb-4 border-b pb-4">
-                <button onclick="showJoinQuery('inner')" class="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm">Donation-Donor JOIN</button>
-                <button onclick="showJoinQuery('left')" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm">Request-Recipient JOIN</button>
-                <button onclick="showJoinQuery('right')" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm">Donor-Donation JOIN</button>
-                <button onclick="showJoinQuery('self')" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm">Recipient SELF JOIN</button>
-                <button onclick="showJoinQuery('complex')" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm">Donation-Donor-NGO JOIN</button>
-                <button onclick="showJoinQuery('full')" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm">Complete Donation JOIN</button>
-                <button onclick="showJoinQuery('request_full')" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm">Complete Request JOIN</button>
-            </div>
-            
-            <div id="query-display" class="bg-gray-50 rounded-lg p-4">
-                <p id="query-description" class="text-gray-700 mb-4">Select a JOIN type to see the SQL query and real data from the database.</p>
-                <div id="sql-query-box" class="bg-gray-800 text-white rounded-lg p-4 font-mono text-sm hidden">
-                    <p class="text-gray-300 mb-2">// SQL Query:</p>
-                    <pre id="query-content"></pre>
-                </div>
-                <div id="join-results-table" class="overflow-x-auto mt-4 hidden">
-                    <p class="text-sm text-gray-600 mb-2">// Real Database Results:</p>
-                    <table class="min-w-full bg-white rounded-lg border">
-                        <thead id="results-head" class="bg-gray-100"></thead>
-                        <tbody id="results-body"></tbody>
-                    </table>
-                </div>
-            </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-4">LEFT JOIN - Requests with Recipients</h3>
+          <div class="mb-4">
+            <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">SELECT R.title, RE.name AS recipient_name, R.status, RE.city
+FROM requests AS R
+LEFT JOIN recipients AS RE ON R.recipient_id = RE.id;</pre>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Request Title</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Recipient Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Status</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">City</th>
+                </tr>
+              </thead>
+              <tbody id="left-join-results">
+                <tr>
+                  <td colspan="4" class="py-4 px-3 text-center text-gray-500">Loading data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+        
+        <!-- RIGHT JOIN Demo -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">RIGHT JOIN - Donors with Donations</h3>
+          <div class="mb-4">
+            <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">SELECT DO.name AS donor_name, DO.city, D.title AS donation_title, D.status
+FROM donors AS DO
+RIGHT JOIN donations AS D ON DO.id = D.donor_id;</pre>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donor Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">City</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donation Title</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody id="right-join-results">
+                <tr>
+                  <td colspan="4" class="py-4 px-3 text-center text-gray-500">Loading data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- SELF JOIN Demo -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">SELF JOIN - Recipients in Same City</h3>
+          <div class="mb-4">
+            <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">SELECT A.name, B.name, A.city
+FROM recipients A, recipients B
+WHERE A.id <> B.id AND A.city = B.city;</pre>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Recipient Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Other Recipient</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">City</th>
+                </tr>
+              </thead>
+              <tbody id="self-join-results">
+                <tr>
+                  <td colspan="3" class="py-4 px-3 text-center text-gray-500">Loading data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- COMPLEX JOIN Demo -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">COMPLEX JOIN - Accepted Donations</h3>
+          <div class="mb-4">
+            <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">SELECT D.title, DO.name AS donor_name, N.ngo_name, D.category, D.status
+FROM donations AS D
+INNER JOIN donors AS DO ON D.donor_id = DO.id
+INNER JOIN ngos AS N ON D.ngo_id = N.id
+WHERE D.status = 'accepted';</pre>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donation Title</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donor Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">NGO Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Category</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody id="complex-join-results">
+                <tr>
+                  <td colspan="5" class="py-4 px-3 text-center text-gray-500">Loading data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- FULL JOIN Demo -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">FULL JOIN - All Donations</h3>
+          <div class="mb-4">
+            <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">SELECT D.title AS donation_title, DO.name AS donor_name, N.ngo_name, D.status, D.category
+FROM donations AS D
+LEFT JOIN donors AS DO ON D.donor_id = DO.id
+LEFT JOIN ngos AS N ON D.ngo_id = N.id
+ORDER BY D.created_at DESC;</pre>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donation Title</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Donor Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">NGO Name</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Status</th>
+                  <th class="py-2 px-3 text-left text-gray-600 font-semibold">Category</th>
+                </tr>
+              </thead>
+              <tbody id="full-join-results">
+                <tr>
+                  <td colspan="5" class="py-4 px-3 text-center text-gray-500">Loading data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
-
   </main>
 </div>
 
 <script>
-  // --- Tab Activation Logic ---
-  function activateTab(tabId) {
+// Tab switching functionality
+document.querySelectorAll('[data-tab-btn]').forEach(button => {
+  button.addEventListener('click', () => {
+    const tabName = button.getAttribute('data-tab-btn');
+    
+    // Hide all tab panels
     document.querySelectorAll('[data-tab-panel]').forEach(panel => {
       panel.classList.add('hidden');
-      panel.classList.remove('animate-fade-in');
     });
     
+    // Show the selected tab panel
+    document.querySelector(`[data-tab-panel="${tabName}"]`).classList.remove('hidden');
+    
+    // Update active button state
     document.querySelectorAll('[data-tab-btn]').forEach(btn => {
-      btn.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-cyan-500', 'text-white', 'shadow-lg');
-      btn.classList.add('text-gray-700', 'hover:bg-gray-100');
+      btn.classList.remove('bg-purple-100', 'text-purple-700', 'font-semibold');
+      btn.classList.add('text-gray-700');
     });
     
-    const activePanel = document.querySelector(`[data-tab-panel="${tabId}"]`);
-    if (activePanel) {
-      activePanel.classList.remove('hidden');
-      setTimeout(() => activePanel.classList.add('animate-fade-in'), 10);
-      
-      // If activating the DBMS tab, show the first join example
-      if (tabId === 'dbms') {
-        // Small delay to ensure the tab is fully rendered
-        setTimeout(() => showJoinQuery('inner'), 100);
-      }
-    }
-    
-    const activeButton = document.querySelector(`[data-tab-btn="${tabId}"]`);
-    if (activeButton) {
-      activeButton.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-cyan-500', 'text-white', 'shadow-lg');
-      activeButton.classList.remove('text-gray-700', 'hover:bg-gray-100');
-    }
-  }
-
-  // --- DBMS Demo Logic ---
-  const joinData = {
-    inner: {
-      description: 'INNER JOIN: Shows donations with their donor information. Only donations that have matching donors are included.',
-      apiEndpoint: '/api/dbms/inner/',
-      query: '',
-      headers: [],
-      results: []
-    },
-    left: {
-      description: 'LEFT JOIN: Shows all requests and includes recipient information when available. If a request has no recipient, recipient fields will be NULL.',
-      apiEndpoint: '/api/dbms/left/',
-      query: '',
-      headers: [],
-      results: []
-    },
-    right: {
-      description: 'RIGHT JOIN: Shows all donors and includes donation information when available. If a donor has no donations, donation fields will be NULL.',
-      apiEndpoint: '/api/dbms/right/',
-      query: '',
-      headers: [],
-      results: []
-    },
-    self: {
-      description: 'SELF JOIN: Shows recipients who are from the same city.',
-      apiEndpoint: '/api/dbms/self/',
-      query: '',
-      headers: [],
-      results: []
-    },
-    complex: {
-      description: 'COMPLEX JOIN: Shows donations that have been accepted by an NGO, along with donor and NGO information.',
-      apiEndpoint: '/api/dbms/complex/',
-      query: '',
-      headers: [],
-      results: []
-    },
-    full: {
-      description: 'MULTIPLE JOIN: Shows the complete relationship between donations, donors, and NGOs with additional details.',
-      apiEndpoint: '/api/dbms/full/',
-      query: '',
-      headers: [],
-      results: []
-    },
-    request_full: {
-      description: 'COMPLETE REQUEST JOIN: Shows all requests with recipient details and urgency information.',
-      apiEndpoint: '/api/dbms/request_full/',
-      query: '',
-      headers: [],
-      results: []
-    }
-  };
-
-  function showJoinQuery(joinType) {
-    const data = joinData[joinType];
-    if (!data) return;
-
-    // Update description
-    document.getElementById('query-description').textContent = data.description;
-    
-    // Show loading state
-    document.getElementById('sql-query-box').classList.remove('hidden');
-    document.getElementById('join-results-table').classList.remove('hidden');
-    document.getElementById('query-content').textContent = 'Loading...';
-    
-    // Clear previous results
-    const head = document.getElementById('results-head');
-    const body = document.getElementById('results-body');
-    head.innerHTML = '';
-    body.innerHTML = '';
-    
-    // Fetch real data from API
-    fetch(data.apiEndpoint)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(result => {
-        // Update query and results
-        document.getElementById('query-content').textContent = result.query;
-        data.headers = result.headers;
-        data.results = result.results;
-        
-        // Update table headers
-        head.innerHTML = '';
-        const headerRow = document.createElement('tr');
-        data.headers.forEach(headerText => {
-            const th = document.createElement('th');
-            th.className = 'py-2 px-3 text-left text-sm font-semibold text-gray-600';
-            th.textContent = headerText;
-            headerRow.appendChild(th);
-        });
-        head.appendChild(headerRow);
-
-        // Update table rows
-        body.innerHTML = '';
-        data.results.forEach(rowData => {
-            const tr = document.createElement('tr');
-            tr.className = 'border-t';
-            rowData.forEach(cellData => {
-                const td = document.createElement('td');
-                td.className = 'py-2 px-3 text-sm';
-                td.textContent = cellData;
-                if (cellData === 'NULL') {
-                    td.classList.add('text-gray-400', 'italic');
-                }
-                tr.appendChild(td);
-            });
-            body.appendChild(tr);
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching join data:', error);
-        document.getElementById('query-content').textContent = 'Error loading data. Please try again.';
-        // Show error in table
-        head.innerHTML = '';
-        body.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-red-500">Failed to load data: ' + error.message + '</td></tr>';
-      });
-  }
-
-  // --- Page Initialization ---
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[data-tab-btn]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tabId = btn.getAttribute('data-tab-btn');
-        activateTab(tabId);
-      });
-    });
-
-    activateTab('dashboard');
+    button.classList.add('bg-purple-100', 'text-purple-700', 'font-semibold');
   });
+});
+
+// Load DBMS demo data
+document.addEventListener('DOMContentLoaded', function() {
+  // INNER JOIN
+  fetch('/api/dbms/inner/')
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.getElementById('inner-join-results');
+      tbody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-3">${row[0]}</td>
+          <td class="py-2 px-3">${row[1]}</td>
+          <td class="py-2 px-3">${row[2]}</td>
+          <td class="py-2 px-3">${row[3]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading inner join data:', error);
+    });
+
+  // LEFT JOIN
+  fetch('/api/dbms/left/')
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.getElementById('left-join-results');
+      tbody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-3">${row[0]}</td>
+          <td class="py-2 px-3">${row[1]}</td>
+          <td class="py-2 px-3">${row[2]}</td>
+          <td class="py-2 px-3">${row[3]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading left join data:', error);
+    });
+
+  // RIGHT JOIN
+  fetch('/api/dbms/right/')
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.getElementById('right-join-results');
+      tbody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-3">${row[0]}</td>
+          <td class="py-2 px-3">${row[1]}</td>
+          <td class="py-2 px-3">${row[2]}</td>
+          <td class="py-2 px-3">${row[3]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading right join data:', error);
+    });
+
+  // SELF JOIN
+  fetch('/api/dbms/self/')
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.getElementById('self-join-results');
+      tbody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-3">${row[0]}</td>
+          <td class="py-2 px-3">${row[1]}</td>
+          <td class="py-2 px-3">${row[2]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading self join data:', error);
+    });
+
+  // COMPLEX JOIN
+  fetch('/api/dbms/complex/')
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.getElementById('complex-join-results');
+      tbody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-3">${row[0]}</td>
+          <td class="py-2 px-3">${row[1]}</td>
+          <td class="py-2 px-3">${row[2]}</td>
+          <td class="py-2 px-3">${row[3]}</td>
+          <td class="py-2 px-3">${row[4]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading complex join data:', error);
+    });
+
+  // FULL JOIN
+  fetch('/api/dbms/full/')
+    .then(response => response.json())
+    .then(data => {
+      const tbody = document.getElementById('full-join-results');
+      tbody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-3">${row[0]}</td>
+          <td class="py-2 px-3">${row[1]}</td>
+          <td class="py-2 px-3">${row[2]}</td>
+          <td class="py-2 px-3">${row[3]}</td>
+          <td class="py-2 px-3">${row[4]}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading full join data:', error);
+    });
+});
 </script>
 {% endblock %}

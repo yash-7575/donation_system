@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Recipient Feedback — GiveHope{% endblock %}
+{% block content %}
+<div id="recipient-feedback-scope" class="min-h-screen bg-gradient-to-br from-cyan-50 via-purple-50 to-orange-50 flex">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-lg fixed h-full">
+    <div class="p-6 border-b">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-12 h-12 gradient-accent rounded-xl flex items-center justify-center"><span class="text-white font-bold">❤</span></div>
+        <span class="text-xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">GiveHope</span>
+      </div>
+      <div class="flex items-center space-x-3 mt-4">
+        <div class="w-10 h-10 gradient-accent rounded-full flex items-center justify-center text-white font-bold">R</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-gray-900 truncate">{{ recipient.name }}</div>
+          <div class="text-xs text-gray-500 truncate">Recipient</div>
+        </div>
+      </div>
+    </div>
+    <nav class="p-4 space-y-2">
+      <a href="{% url 'recipient' %}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100">
+        <span>Dashboard</span>
+      </a>
+      <a href="{% url 'recipient_feedback' %}" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all gradient-accent text-white shadow-lg">
+        <span>Feedback</span>
+      </a>
+      <a href="{% url 'home' %}" class="block mt-8 text-red-600 px-4 py-3 rounded-lg hover:bg-red-50">Logout</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 ml-64 p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Feedback</h1>
+    <p class="text-gray-600 mb-8">Share your experience and help us improve our services ❤️</p>
+    
+    <!-- Feedback Form -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+      <h2 class="text-xl font-bold text-gray-900 mb-4">Submit Feedback</h2>
+      <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
+          <select name="rating" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" required>
+            <option value="">Select Rating</option>
+            <option value="1">1 Star - Poor</option>
+            <option value="2">2 Stars - Fair</option>
+            <option value="3">3 Stars - Good</option>
+            <option value="4">4 Stars - Very Good</option>
+            <option value="5">5 Stars - Excellent</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Comment</label>
+          <textarea name="comment" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="Share your experience..." required></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Donation</label>
+          <select name="donation" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" required>
+            <option value="">Select Donation</option>
+            {% for donation in donations %}
+              <option value="{{ donation.id }}">{{ donation.title }} ({{ donation.created_at|date:"M d, Y" }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="px-6 py-3 rounded-lg gradient-accent text-white">Submit Feedback</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Edit Feedback Modal -->
+    {% if feedback and request.resolver_match.url_name == 'edit_feedback' %}
+    <div id="editFeedbackModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Edit Feedback</h2>
+        <form method="POST" action="{% url 'edit_feedback' feedback.feedback_id %}" class="space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
+            <select name="rating" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" required>
+              <option value="">Select Rating</option>
+              <option value="1" {% if feedback.rating == 1 %}selected{% endif %}>1 Star - Poor</option>
+              <option value="2" {% if feedback.rating == 2 %}selected{% endif %}>2 Stars - Fair</option>
+              <option value="3" {% if feedback.rating == 3 %}selected{% endif %}>3 Stars - Good</option>
+              <option value="4" {% if feedback.rating == 4 %}selected{% endif %}>4 Stars - Very Good</option>
+              <option value="5" {% if feedback.rating == 5 %}selected{% endif %}>5 Stars - Excellent</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Comment</label>
+            <textarea name="comment" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="Share your experience..." required>{{ feedback.comment }}</textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Donation</label>
+            <select name="donation" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" disabled>
+              <option value="{{ feedback.donation.id }}" selected>{{ feedback.donation.title }} ({{ feedback.donation.created_at|date:"M d, Y" }})</option>
+            </select>
+            <input type="hidden" name="donation" value="{{ feedback.donation.id }}">
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button type="button" class="px-4 py-2 border border-gray-300 rounded-lg" onclick="closeEditModal()">Cancel</button>
+            <button type="submit" class="px-4 py-2 rounded-lg gradient-accent text-white">Update Feedback</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- Delete Confirmation Modal -->
+    {% if feedback and request.resolver_match.url_name == 'delete_feedback' %}
+    <div id="deleteFeedbackModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Delete Feedback</h2>
+        <p class="text-gray-700 mb-6">Are you sure you want to delete this feedback? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-3">
+          <button type="button" class="px-4 py-2 border border-gray-300 rounded-lg" onclick="closeDeleteModal()">Cancel</button>
+          <form method="POST" action="{% url 'delete_feedback' feedback.feedback_id %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 text-white">Delete Feedback</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- Feedback List -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-4">Your Feedback History</h2>
+      {% if feedback_list %}
+        <div class="space-y-4">
+          {% for feedback in feedback_list %}
+            <div class="border-b border-gray-200 pb-4 last:border-0 last:pb-0">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="flex items-center mb-1">
+                    <div class="flex text-yellow-400">
+                      {% for i in "12345" %}
+                        {% if forloop.counter <= feedback.rating %}
+                          ★
+                        {% else %}
+                          ☆
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                    <span class="ml-2 text-sm text-gray-500">{{ feedback.created_at|date:"M d, Y" }}</span>
+                  </div>
+                  <p class="text-gray-700">{{ feedback.comment }}</p>
+                  {% if feedback.donation %}
+                    <p class="text-sm text-gray-500 mt-1">For donation: {{ feedback.donation.title }}</p>
+                  {% endif %}
+                </div>
+                <div class="flex space-x-2">
+                  <a href="{% url 'edit_feedback' feedback.feedback_id %}" class="px-3 py-1 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm">Edit</a>
+                  <a href="{% url 'delete_feedback' feedback.feedback_id %}" class="px-3 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-sm" onclick="return confirm('Are you sure you want to delete this feedback?')">Delete</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-gray-500">You haven't submitted any feedback yet.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<script>
+  // Check if we should show the edit modal
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if feedback and request.resolver_match.url_name == 'edit_feedback' %}
+      document.getElementById('editFeedbackModal').style.display = 'flex';
+    {% elif feedback and request.resolver_match.url_name == 'delete_feedback' %}
+      document.getElementById('deleteFeedbackModal').style.display = 'flex';
+    {% endif %}
+  });
+  
+  function closeEditModal() {
+    document.getElementById('editFeedbackModal').style.display = 'none';
+    // Redirect to the feedback page to clear the URL
+    window.location.href = "{% url 'recipient_feedback' %}";
+  }
+  
+  function closeDeleteModal() {
+    document.getElementById('deleteFeedbackModal').style.display = 'none';
+    // Redirect to the feedback page to clear the URL
+    window.location.href = "{% url 'recipient_feedback' %}";
+  }
+</script>
+{% endblock %}
